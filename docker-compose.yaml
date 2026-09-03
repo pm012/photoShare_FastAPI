@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: photoshare_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret_password
+      POSTGRES_DB: photoshare_db
+    ports:
+      - "5433:5432"  # <-- Змінили 5432 на 5433 для хоста
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - photoshare_net
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: photoshare_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - photoshare_net
+    restart: always
+
+volumes:
+  postgres_data:
+
+networks:
+  photoshare_net:
+    driver: bridge
