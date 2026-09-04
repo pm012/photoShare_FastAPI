@@ -1,6 +1,6 @@
 from typing import Optional, Tuple, List
 from sqlalchemy.orm import Session
-from src.database.models import User, Photo
+from src.database.models import User, Photo, UserRole
 
 def get_user_profile_by_username(username: str, db: Session) -> Optional[Tuple[User, int]]:
     user = db.query(User).filter(User.username == username).first()
@@ -32,3 +32,20 @@ def search_users_admin(search_str: str, db: Session) -> List[User]:
         (User.username.ilike(f"%{search_str}%")) | 
         (User.email.ilike(f"%{search_str}%"))
     ).all()
+    
+def delete_user(user_id: int, db: Session) -> Optional[User]:
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        db.delete(user)
+        db.commit()
+    return user
+
+
+
+def change_user_role(user_id: int, new_role: UserRole, db: Session) -> Optional[User]:
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        user.role = new_role
+        db.commit()
+        db.refresh(user)
+    return user

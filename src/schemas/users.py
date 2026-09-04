@@ -24,3 +24,7 @@ class UserMeResponse(BaseModel):
 # Схема для редагування власного профілю
 class UserUpdateModel(BaseModel):
     username: str
+
+# Схема для редагування ролі не адміна адміном
+class UserRoleUpdateModel(BaseModel):
+    role: UserRole

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from fastapi import Request
 
 from src.database.db import get_db
 from src.database.models import User, UserRole
@@ -7,6 +8,7 @@ from src.schemas.users import UserPublicResponse, UserMeResponse, UserUpdateMode
 from src.repository import users as repository_users
 from src.services.auth import auth_service
 from src.services.roles import RoleAccess
+from src.services.limiter import limiter
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -20,7 +22,9 @@ def get_current_user_profile(current_user: User = Depends(allowed_all)):
 
 
 @router.put("/me", response_model=UserMeResponse)
+@limiter.limit("10/minute")
 def update_current_user_profile(
+    request: Request,
     body: UserUpdateModel, 
     current_user: User = Depends(allowed_all), 
     db: Session = Depends(get_db)
@@ -41,7 +45,9 @@ def get_user_public_profile(username: str, db: Session = Depends(get_db), curren
 
 
 @router.patch("/{user_id}/ban", response_model=UserMeResponse)
+@limiter.limit("10/minute")
 def ban_user(
+    request: Request,
     user_id: int, 
     is_active: bool = False,  # False — забанити, True — розбанити
     current_user: User = Depends(allowed_admin),  # ТІЛЬКИ Admin за ТЗ
@@ -55,3 +61,55 @@ def ban_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
+
+from src.schemas.users import UserRoleUpdateModel # <-- Додали імпорт нової схеми
+
+@router.patch("/{user_id}/role", response_model=UserMeResponse)
+@limiter.limit("10/minute")
+def change_user_role(
+    request: Request,
+    user_id: int,
+    body: UserRoleUpdateModel,
+    current_user: User = Depends(allowed_admin),  # Тільки Admin може міняти ролі!
+    db: Session = Depends(get_db)
+):
+    # Забороняємо адміну змінювати роль самому собі (щоб випадково не заблокувати доступ)
+    if current_user.id == user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="You cannot change your own role."
+        )
+        
+    user = repository_users.change_user_role(user_id, body.role, db)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        
+    return user
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(
+    user_id: int,
+    current_user: User = Depends(allowed_all),  # Доступно всім авторизованим, але з логікою всередині
+    db: Session = Depends(get_db)
+):
+    # 1. Захист: Адмін не може видалити самого себе
+    if current_user.role == UserRole.ADMIN and current_user.id == user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="You cannot delete your own admin account."
+        )
+
+    # 2. Перевірка прав: видалити може або сам власник, або ADMIN
+    if current_user.id != user_id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to delete this account."
+        )
+
+    user = repository_users.delete_user(user_id, db)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        
+    return None
+
+

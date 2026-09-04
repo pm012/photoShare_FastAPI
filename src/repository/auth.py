@@ -28,7 +28,7 @@ def create_user(body: UserModel, db: Session) -> User:
         hashed_password=hashed_password,
         role=role,
         is_active=True,
-        is_confirmed=auto_confirm  # <-- 🔥 2. ЗАСТОСУВАЛИ ЗМІННУ ЗАМІСТЬ ХАРДКОДУ
+        is_confirmed=auto_confirm  # <-- змінна щоб не хардкодити потребу підтвердження мейлу
     )
     
     db.add(new_user)
