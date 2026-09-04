@@ -1,6 +1,8 @@
 FROM python:3.14-alpine
 
 # Встановлюємо системні залежності, необхідні для компіляції psycopg2 та bcrypt
+
+RUN apk update && apk upgrade --no-cache
 RUN apk add --no-cache gcc musl-dev postgresql-dev libffi-dev
 
 WORKDIR /app

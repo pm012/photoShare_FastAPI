@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import Request
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
@@ -9,13 +10,16 @@ from src.repository import transformations as repository_transformations
 from src.services.cloudinary import cloudinary_service
 from src.services.qrcode import generate_qr_code_url
 from src.services.roles import RoleAccess
+from src.services.limiter import limiter
 
 router = APIRouter(prefix="/photos", tags=["transformations"])
 
 allowed_all = RoleAccess([UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN])
 
 @router.post("/{photo_id}/transform", response_model=TransformationResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
 def transform_photo(
+    request: Request,
     photo_id: int,
     body: TransformationCreate,
     current_user: User = Depends(allowed_all),

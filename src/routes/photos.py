@@ -1,5 +1,6 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import Request
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
@@ -9,6 +10,7 @@ from src.repository import photos as repository_photos
 from src.services.auth import auth_service
 from src.services.cloudinary import cloudinary_service
 from src.services.roles import RoleAccess
+from src.services.limiter import limiter
 
 router = APIRouter(prefix="/photos", tags=["photos"])
 
@@ -17,7 +19,9 @@ router = APIRouter(prefix="/photos", tags=["photos"])
 allowed_all = RoleAccess([UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN])
 
 @router.post("/", response_model=PhotoResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
 async def upload_photo(
+    request: Request,
     file: UploadFile = File(...),
     description: Optional[str] = Form(None),
     tags: Optional[str] = Form(None),  # Передаємо списком через кому за ТЗ (наприклад: "nature, sunset, sea")
@@ -66,7 +70,9 @@ def get_photo(photo_id: int, db: Session = Depends(get_db), current_user: User =
 
 
 @router.put("/{photo_id}", response_model=PhotoResponse)
+@limiter.limit("5/minute")
 def update_photo_description(
+    request: Request,
     photo_id: int, 
     body: PhotoUpdateDescription, 
     current_user: User = Depends(allowed_all), 

@@ -1,5 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import Request
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
@@ -8,6 +9,8 @@ from src.schemas.comments import CommentModel, CommentResponse
 from src.repository import comments as repository_comments
 from src.repository import photos as repository_photos
 from src.services.roles import RoleAccess
+from src.services.limiter import limiter
+
 
 router = APIRouter(prefix="/photos", tags=["comments"])
 
@@ -17,9 +20,11 @@ allowed_all = RoleAccess([UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN])
 allowed_delete = RoleAccess([UserRole.MODERATOR, UserRole.ADMIN])
 
 @router.post("/{photo_id}/comments", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 def create_comment(
     photo_id: int,
     body: CommentModel,
+    request: Request,
     current_user: User = Depends(allowed_all),
     db: Session = Depends(get_db)
 ):
@@ -41,7 +46,9 @@ def get_comments(photo_id: int, db: Session = Depends(get_db), current_user: Use
 
 
 @router.put("/comments/{comment_id}", response_model=CommentResponse)
+@limiter.limit("10/minutes")
 def update_comment(
+    request: Request,
     comment_id: int,
     body: CommentModel,
     current_user: User = Depends(allowed_all),

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import Request
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 
 from src.conf.config import settings
@@ -10,13 +11,15 @@ from src.schemas.auth import UserModel, UserDb, TokenModel
 from src.repository import auth as repository_auth
 from src.services.auth import auth_service
 from src.services.blacklist import blacklist_service
+from src.services.limiter import  limiter
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/signup", response_model=UserDb, status_code=status.HTTP_201_CREATED)
-def signup(body: UserModel, db: Session = Depends(get_db)):
+@limiter.limit("2/minute")
+def signup(request: Request, body: UserModel, db: Session = Depends(get_db)):
     # Перевіряємо, чи користувач з таким email вже існує
     exist_user = repository_auth.get_user_by_email(body.email, db)
     if exist_user:
@@ -31,7 +34,8 @@ def signup(body: UserModel, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenModel)
-def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, body: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # Шукаємо користувача за email (у Swagger форму логіну поле називається username, але ми туди очікуємо email)
     user = repository_auth.get_user_by_email(body.username, db)
     if user is None:
