@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: secret_password
       POSTGRES_DB: photoshare_db
     ports:
-      - "5433:5432"  # <-- Змінили 5432 на 5433 для хоста
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -19,6 +19,25 @@ services:
     container_name: photoshare_redis
     ports:
       - "6379:6379"
+    networks:
+      - photoshare_net
+    restart: always
+
+  web:
+    build: .
+    container_name: photoshare_web
+    ports:
+      - "8000:8000"
+    # 🔥 МАГІЯ ТУТ: Docker сам зчитає ваш локальний .env і прокине змінні у web
+    env_file:
+      - .env
+    environment:
+      # Перекриваємо тільки хост бази даних, бо всередині докера він має назву db:5432
+      - DATABASE_URL=postgresql+psycopg2://postgres:secret_password@db:5432/photoshare_db
+      - REDIS_HOST=redis
+    depends_on:
+      - db
+      - redis
     networks:
       - photoshare_net
     restart: always

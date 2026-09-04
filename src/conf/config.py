@@ -11,11 +11,8 @@ class Settings(BaseSettings):
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
 
-    # Pydantic автоматично зчитає змінні з файлу .env, якщо він є, 
-    # або із системного оточення (куди docker-compose може їх прокинути)
+    # Pydantic Settings автоматично шукає змінні в системному оточенні (куди їх прокинув Docker)
     model_config = SettingsConfigDict(
-        env_file=".env", 
-        env_file_encoding="utf-8", 
         extra="ignore"
     )
 

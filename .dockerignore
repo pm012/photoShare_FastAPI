@@ -1,0 +1,26 @@
+# Гіт та документація
+.git
+.gitignore
+README.md
+LICENSE
+
+# Локальне віртуальне оточення (найважливіше!)
+.venv
+venv
+ENV
+
+# Кеш Python та Pytest
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.cache/
+
+# Локальні секрети
+.env
+env-sample.cfg
+
+# Локальні бази даних / логи
+*.db
+*.log
