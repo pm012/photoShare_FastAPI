@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
-from src.routes import auth, photos, transformations, comments, users, ratings
+from src.routes import auth, photos, transformations, comments, users, ratings, search
 
 app = FastAPI(
     title="PhotoShare API",
@@ -14,6 +14,7 @@ app.include_router(transformations.router, prefix="/api")
 app.include_router(comments.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 app.include_router(ratings.router, prefix="/api")   
+app.include_router(search.router, prefix="/api")
 
 @app.get("/", tags=["root"])
 def root():

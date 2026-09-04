@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 from sqlalchemy.orm import Session
 from src.database.models import User, Photo
 
@@ -25,3 +25,10 @@ def ban_user(user_id: int, ban_status: bool, db: Session) -> Optional[User]:
         db.commit()
         db.refresh(user)
     return user
+
+def search_users_admin(search_str: str, db: Session) -> List[User]:
+    # Шукаємо користувачів за частковим збігом в username або email (ігноруючи регістр)
+    return db.query(User).filter(
+        (User.username.ilike(f"%{search_str}%")) | 
+        (User.email.ilike(f"%{search_str}%"))
+    ).all()

@@ -1,7 +1,8 @@
 from typing import List, Optional
+from sqlalchemy import func, desc, asc
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from src.database.models import Photo, Tag, User
+from src.database.models import Rating, Photo, Tag, User, photo_m2m_tag
 from src.schemas.photos import PhotoUpdateDescription
 
 def process_tags(tags_list: List[str], db: Session) -> List[Tag]:
@@ -79,3 +80,46 @@ def delete_photo(photo_id: int, current_user: User, db: Session) -> Optional[Pho
     db.delete(photo)
     db.commit()
     return photo
+
+def search_photos(query_str: Optional[str], tag_name: Optional[str], sort_by: str, order: str, db: Session) -> List[dict]:
+    # Базовий запит з підрахунком середньої оцінки
+    search_query = db.query(
+        Photo,
+        func.coalesce(func.avg(Rating.rate), 0.0).label("avg_rating")
+    ).outerjoin(Rating, Photo.id == Rating.photo_id)
+
+    # Фільтрація за описом
+    if query_str:
+        search_query = search_query.filter(Photo.description.ilike(f"%{query_str}%"))
+
+    # Фільтрація за тегом
+    if tag_name:
+        tag_name = tag_name.strip().lower()
+        search_query = search_query.join(Photo.tags).filter(Tag.name == tag_name)
+
+    # Групування для коректної агрегації
+    search_query = search_query.group_by(Photo.id)
+
+    # Визначаємо поле для сортування за ТЗ
+    sort_field = "avg_rating" if sort_by == "rating" else Photo.created_at
+
+    # Динамічно застосовуємо напрямок сортування (ASC / DESC) за вашою пропозицією
+    if order == "asc":
+        search_query = search_query.order_by(asc(sort_field))
+    else:
+        search_query = search_query.order_by(desc(sort_field))
+
+    results = search_query.all()
+
+    mapped_results = []
+    for photo, avg_rating in results:
+        mapped_results.append({
+            "id": photo.id,
+            "user_id": photo.user_id,
+            "url": photo.url,
+            "description": photo.description,
+            "tags": photo.tags,
+            "created_at": photo.created_at,
+            "average_rating": round(avg_rating, 2)
+        })
+    return mapped_results
