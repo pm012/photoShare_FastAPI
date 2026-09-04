@@ -1,3 +1,5 @@
+import jwt
+
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi import Request
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
@@ -12,6 +14,7 @@ from src.repository import auth as repository_auth
 from src.services.auth import auth_service
 from src.services.blacklist import blacklist_service
 from src.services.limiter import  limiter
+from src.services.email import send_verification_email, send_reset_password_email
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -19,17 +22,21 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/signup", response_model=UserDb, status_code=status.HTTP_201_CREATED)
 @limiter.limit("2/minute")
-def signup(request: Request, body: UserModel, db: Session = Depends(get_db)):
-    # Перевіряємо, чи користувач з таким email вже існує
+async def signup(body: UserModel, request: Request, db: Session = Depends(get_db)):
     exist_user = repository_auth.get_user_by_email(body.email, db)
     if exist_user:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, 
-            detail="Account with this email already exists"
-        )
+        raise HTTPException(status_code=409, detail="Account already exists")
     
-    # Створюємо користувача (всередині закладена логіка: перший — ADMIN)
     new_user = repository_auth.create_user(body, db)
+    
+    # Надсилаємо лист ТІЛЬКИ якщо верифікація увімкнена в налаштуваннях
+    if settings.MAIL_CONFIRMATION_REQUIRED:
+        try:
+            await send_verification_email(new_user.email, new_user.username, str(request.base_url))
+        except Exception as e:
+            # Якщо пошта впала, ми не ламаємо реєстрацію, а просто логуємо помилку
+            print(f"Email sending failed: {e}")
+            
     return new_user
 
 
@@ -75,3 +82,35 @@ def logout(token: str = Depends(oauth2_scheme), current_user: User = Depends(aut
     blacklist_service.add_to_blacklist(token, expire_seconds)
     
     return {"message": "You have successfully logged out."}
+
+from src.schemas.auth import RequestEmail, ResetPasswordModel
+from src.services.email import send_reset_password_email
+
+@router.post("/request_password_reset")
+async def request_password_reset(body: RequestEmail, request: Request, db: Session = Depends(get_db)):
+    user = repository_auth.get_user_by_email(body.email, db)
+    if user:
+        await send_reset_password_email(user.email, user.username, str(request.base_url))
+    # Заради безпеки (захист від сканування імейлів) завжди повертаємо успіх
+    return {"message": "If the email exists, a reset link has been sent."}
+
+
+@router.post("/reset_password/{token}")
+def reset_password(token: str, body: ResetPasswordModel, db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload.get("scope") != "password_reset":
+            raise HTTPException(status_code=400, detail="Invalid token scope")
+        email = payload.get("sub")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    user = repository_auth.get_user_by_email(email, db)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Хешуємо та перезаписуємо новий пароль нативним bcrypt
+    user.hashed_password = auth_service.get_password_hash(body.password)
+    db.commit()
+    return {"message": "Password has been successfully updated. You can now log in."}
+

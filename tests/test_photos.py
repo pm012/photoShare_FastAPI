@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 import pytest
 from src.services.cloudinary import cloudinary_service
+from src.database.models import User
 
 @pytest.fixture(autouse=True)
 def mock_cloudinary(monkeypatch):

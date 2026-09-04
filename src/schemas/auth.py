@@ -24,3 +24,10 @@ class UserDb(BaseModel):
 class TokenModel(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    
+class RequestEmail(BaseModel):
+    email: EmailStr
+
+class ResetPasswordModel(BaseModel):
+    password: str = Field(min_length=6, max_length=100)
+

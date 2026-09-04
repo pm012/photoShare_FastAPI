@@ -7,8 +7,9 @@ from sqlalchemy.pool import StaticPool
 from main import app
 from src.database.db import get_db, Base
 from src.services.blacklist import blacklist_service
+from src.services.limiter import limiter  # Імпортуємо лімітер
+from src.services import email as service_email  # Імпортуємо сервіс імейлів
 
-# 1. Тестова БД в пам'яті
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
 engine = create_engine(
@@ -19,22 +20,17 @@ engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-# 2.Фікстура сесії: очищує та створює таблиці на кожен тест індивідуально
 @pytest.fixture(scope="function")
 def db_session():
-    # Перед КОЖНИМ тестом створюємо таблиці з нуля
     Base.metadata.create_all(bind=engine)
-    
     session = TestingSessionLocal()
     try:
         yield session
     finally:
         session.close()
-        # Після КОЖНОГО тесту повністю видаляємо структуру, гарантуючи ізоляцію
         Base.metadata.drop_all(bind=engine)
 
 
-# 3. Фікстура клієнта тестування
 @pytest.fixture(scope="function")
 def client(db_session, monkeypatch):
     def override_get_db():
@@ -45,7 +41,15 @@ def client(db_session, monkeypatch):
 
     app.dependency_overrides[get_db] = override_get_db
     
-    # Мокаємо сервіс чорного списку токенів Redis
+    # 🔥 1. ВИМИКАЄМО RATE LIMITER ДЛЯ ТЕСТІВ, щоб не було помилок 429
+    limiter.enabled = False
+
+    # 🔥 2. МОКАЄМО ВІДПРАВКУ ЛИСТІВ (Заглушка, яка нічого не відправляє і не гальмує тести)
+    async def mock_send_email(email, username, host):
+        return None
+    monkeypatch.setattr(service_email, "send_verification_email", mock_send_email)
+
+    # Мокаємо сервіс чорного списку Redis
     monkeypatch.setattr(blacklist_service, "is_token_blacklisted", lambda token: False)
     monkeypatch.setattr(blacklist_service, "add_to_blacklist", lambda token, ttl: None)
 

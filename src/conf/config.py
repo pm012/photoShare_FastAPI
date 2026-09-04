@@ -11,6 +11,13 @@ class Settings(BaseSettings):
     CLOUDINARY_API_SECRET: str
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
+    
+    MAIL_USERNAME: str
+    MAIL_PASSWORD: str
+    MAIL_FROM: str
+    MAIL_PORT: int = 465
+    MAIL_SERVER: str
+    MAIL_CONFIRMATION_REQUIRED: bool = True # для продакшену увімкнена (вимикається в env файлі)
 
     # Гнучка логіка для локального запуску та Docker:
     # 1. Якщо ми в Docker, змінна DATABASE_URL вже є в системі, і ми НЕ шукаємо файл .env.
