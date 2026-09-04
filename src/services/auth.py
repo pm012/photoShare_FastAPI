@@ -9,9 +9,10 @@ from sqlalchemy.orm import Session
 from src.conf.config import settings
 from src.database.db import get_db
 from src.database.models import User
+from src.services.blacklist import blacklist_service
 
 class AuthResultService:
-    oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
+    oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         # Нативний bcrypt працює з байтами, тому ми конвертуємо рядки в utf-8
@@ -43,6 +44,9 @@ class AuthResultService:
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+        
+        if blacklist_service.is_token_blacklisted(token):
+            raise credentials_exception
 
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])

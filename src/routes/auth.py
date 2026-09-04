@@ -1,11 +1,17 @@
 from fastapi import APIRouter, HTTPException, Depends, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+
+from src.conf.config import settings
 from sqlalchemy.orm import Session
+from src.database.models import User
 
 from src.database.db import get_db
 from src.schemas.auth import UserModel, UserDb, TokenModel
 from src.repository import auth as repository_auth
 from src.services.auth import auth_service
+from src.services.blacklist import blacklist_service
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -46,8 +52,22 @@ def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, 
             detail="Invalid email or password"
-        )
+        )      
+
     
     # Генеруємо JWT токен доступу
     access_token = auth_service.create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+def logout(token: str = Depends(oauth2_scheme), current_user: User = Depends(auth_service.get_current_user),
+    db: Session = Depends(get_db)):
+    
+    # Визначаємо час життя токена (беремо дефолтне значення з конфігурації за ТЗ)
+    # Для більшої точності можна розпарсити exp з токена, але за умовою TTL = час до експірації
+    expire_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    
+    # Додаємо токен у чорний список
+    blacklist_service.add_to_blacklist(token, expire_seconds)
+    
+    return {"message": "You have successfully logged out."}
