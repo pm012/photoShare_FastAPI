@@ -19,7 +19,7 @@ router = APIRouter(prefix="/photos", tags=["photos"])
 allowed_all = RoleAccess([UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN])
 
 @router.post("/", response_model=PhotoResponse, status_code=status.HTTP_201_CREATED)
-@limiter.limit("5/minute")
+@limiter.limit("3/minute")
 async def upload_photo(
     request: Request,
     file: UploadFile = File(...),
