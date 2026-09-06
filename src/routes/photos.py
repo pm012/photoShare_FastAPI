@@ -1,6 +1,8 @@
+from io import BytesIO
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from fastapi import Request
+from PIL import Image, UnidentifiedImageError
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
@@ -11,6 +13,7 @@ from src.services.auth import auth_service
 from src.services.cloudinary import cloudinary_service
 from src.services.roles import RoleAccess
 from src.services.limiter import limiter
+from src.conf.config import settings
 
 router = APIRouter(prefix="/photos", tags=["photos"])
 
@@ -29,11 +32,33 @@ async def upload_photo(
     db: Session = Depends(get_db)
 ):
     # Валідація типу файлу (захист від завантаження шкідливих скриптів)
-    if file.content_type not in ["image/jpeg", "image/png", "image/jpg", "image/webp"]:
+    allowed_types = {"JPEG": {"image/jpeg", "image/jpg"}, "PNG": {"image/png"}, "WEBP": {"image/webp"}}
+    if file.content_type not in {"image/jpeg", "image/png", "image/jpg", "image/webp"}:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
             detail="Invalid file type. Only JPEG, JPG, PNG, and WEBP are supported."
         )
+    file_bytes = await file.read()
+    if len(file_bytes) > settings.MAX_UPLOAD_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="Image exceeds the maximum allowed size.",
+        )
+    try:
+        with Image.open(BytesIO(file_bytes)) as image:
+            image.verify()
+            if image.format not in allowed_types or file.content_type not in allowed_types[image.format]:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="File content does not match its declared image type.",
+                )
+    except (UnidentifiedImageError, OSError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file is not a valid image.",
+        )
+    finally:
+        file.file.seek(0)
 
     # 1. Завантажуємо файл у Cloudinary
     try:

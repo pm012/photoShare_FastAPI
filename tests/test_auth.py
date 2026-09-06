@@ -1,4 +1,5 @@
 import jwt
+from src.database.models import User
 from src.conf.config import settings
 
 def test_signup_first_user_as_admin(client):
@@ -67,6 +68,27 @@ def test_login_invalid_credentials(client):
         }
     )
     assert response.status_code == 401    
+
+
+def test_login_requires_email_confirmation(client, db_session, monkeypatch):
+    settings.MAIL_CONFIRMATION_REQUIRED = True
+    user = User(
+        username="unconfirmed",
+        email="unconfirmed@example.com",
+        hashed_password="",
+        is_confirmed=False,
+    )
+    from src.services.auth import auth_service
+    user.hashed_password = auth_service.get_password_hash("password123")
+    db_session.add(user)
+    db_session.commit()
+
+    response = client.post(
+        "/api/auth/login",
+        data={"username": user.email, "password": "password123"},
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Email address is not confirmed"
 
 def test_confirm_email_invalid_token(client):
     response = client.get("/api/auth/confirmed/invalid_token_here")

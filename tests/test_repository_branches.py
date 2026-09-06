@@ -43,7 +43,9 @@ def test_photo_repository_owner_admin_and_search_branches(db_session):
         999, PhotoUpdateDescription(description="Missing"), owner, db_session
     ) is None
 
-    results = repository_photos.search_photos(None, " SUNSET ", "rating", "asc", db_session)
+    results = repository_photos.search_photos(
+        None, " SUNSET ", "rating", "asc", db_session, user_id=owner.id
+    )
     assert results[0]["description"] == "Updated"
 
     repository_photos.delete_photo(photo.id, admin, db_session)

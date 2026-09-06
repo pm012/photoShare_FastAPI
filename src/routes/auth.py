@@ -1,8 +1,10 @@
 import jwt
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi import Request
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from sqlalchemy.exc import IntegrityError
 
 from src.conf.config import settings
 from sqlalchemy.orm import Session
@@ -24,15 +26,24 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @limiter.limit("2/minute")
 async def signup(body: UserModel, request: Request, db: Session = Depends(get_db)):
     exist_user = repository_auth.get_user_by_email(body.email, db)
-    if exist_user:
+    username_taken = repository_auth.get_user_by_username(body.username, db)
+    if exist_user or username_taken:
         raise HTTPException(status_code=409, detail="Account already exists")
     
-    new_user = repository_auth.create_user(body, db)
+    try:
+        new_user = repository_auth.create_user(body, db)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Account already exists")
     
     # Надсилаємо лист ТІЛЬКИ якщо верифікація увімкнена в налаштуваннях
     if settings.MAIL_CONFIRMATION_REQUIRED:
         try:
-            await send_verification_email(new_user.email, new_user.username, str(request.base_url))
+            await send_verification_email(
+                new_user.email,
+                new_user.username,
+                f"{settings.PUBLIC_API_URL.rstrip('/')}/",
+            )
         except Exception as e:
             # Якщо пошта впала, ми не ламаємо реєстрацію, а просто логуємо помилку
             print(f"Email sending failed: {e}")
@@ -56,6 +67,11 @@ def login(request: Request, body: OAuth2PasswordRequestForm = Depends(), db: Ses
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is banned/inactive"
+        )
+    if settings.MAIL_CONFIRMATION_REQUIRED and not user.is_confirmed:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email address is not confirmed",
         )
         
     # Перевіряємо відповідність хешу пароля
@@ -90,15 +106,26 @@ from src.services.email import send_reset_password_email
 async def request_password_reset(body: RequestEmail, request: Request, db: Session = Depends(get_db)):
     user = repository_auth.get_user_by_email(body.email, db)
     if user:
-        await send_reset_password_email(user.email, user.username, str(request.base_url))
+        await send_reset_password_email(
+            user.email,
+            user.username,
+            f"{settings.PUBLIC_API_URL.rstrip('/')}/",
+        )
     # Заради безпеки (захист від сканування імейлів) завжди повертаємо успіх
     return {"message": "If the email exists, a reset link has been sent."}
 
 
 @router.post("/reset_password/{token}")
 def reset_password(token: str, body: ResetPasswordModel, db: Session = Depends(get_db)):
+    if blacklist_service.is_token_blacklisted(token):
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+            options={"require": ["exp", "sub", "scope"]},
+        )
         if payload.get("scope") != "password_reset":
             raise HTTPException(status_code=400, detail="Invalid token scope")
         email = payload.get("sub")
@@ -112,6 +139,11 @@ def reset_password(token: str, body: ResetPasswordModel, db: Session = Depends(g
     # Хешуємо та перезаписуємо новий пароль нативним bcrypt
     user.hashed_password = auth_service.get_password_hash(body.password)
     db.commit()
+    expires_in = max(
+        int(payload["exp"] - datetime.now(timezone.utc).timestamp()),
+        1,
+    )
+    blacklist_service.add_to_blacklist(token, expires_in)
     return {"message": "Password has been successfully updated. You can now log in."}
 
 @router.get("/confirmed/{token}")
@@ -137,4 +169,3 @@ def confirm_email(token: str, db: Session = Depends(get_db)):
     user.is_confirmed = True
     db.commit()
     return {"message": "Email successfully confirmed! You can now log in."}
-

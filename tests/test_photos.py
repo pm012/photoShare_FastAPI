@@ -1,7 +1,14 @@
+import base64
 from unittest.mock import MagicMock
 import pytest
 from src.services.cloudinary import cloudinary_service
 from src.database.models import User
+from src.conf.config import settings
+
+VALID_IMAGE_BYTES = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk"
+    "+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
 
 @pytest.fixture(autouse=True)
 def mock_cloudinary(monkeypatch):
@@ -26,7 +33,7 @@ def test_create_and_search_photo(client):
 
     # 2. Тестуємо завантаження фотографії з описом та тегами
     # Використовуємо псевдо-файл для імітації завантаження через Form Data
-    file_data = {"file": ("test.jpg", b"fake_bytes", "image/jpeg")}
+    file_data = {"file": ("test.png", VALID_IMAGE_BYTES, "image/png")}
     form_data = {"description": "Amazing summer beach", "tags": "summer, beach, nature"}
     
     response = client.post("/api/photos/", headers=headers, files=file_data, data=form_data)
@@ -42,13 +49,34 @@ def test_create_and_search_photo(client):
     assert len(results) == 1
     assert results[0]["description"] == "Amazing summer beach"
 
+    author_results = client.get(
+        "/api/search/photos?user_id=1",
+        headers=headers,
+    )
+    assert author_results.status_code == 200
+    assert len(author_results.json()) == 1
+
+
+def test_regular_user_cannot_filter_search_by_user(client):
+    client.post(
+        "/api/auth/signup",
+        json={"username": "admin_search", "email": "admin-search@example.com", "password": "password123"},
+    )
+    client.post(
+        "/api/auth/signup",
+        json={"username": "regular_search", "email": "regular-search@example.com", "password": "password123"},
+    )
+    headers = get_auth_headers(client, "regular-search@example.com", "password123")
+    response = client.get("/api/search/photos?user_id=1", headers=headers)
+    assert response.status_code == 403
+
 
 def test_create_photo_tags_limit_error(client):
     client.post("/api/auth/signup", json={"username": "admin", "email": "admin@example.com", "password": "password123"})
     headers = get_auth_headers(client, "admin@example.com", "password123")
 
     # Передаємо більше ніж 5 тегів, система має повернути 400 Bad Request за ТЗ
-    file_data = {"file": ("test.jpg", b"fake_bytes", "image/jpeg")}
+    file_data = {"file": ("test.png", VALID_IMAGE_BYTES, "image/png")}
     form_data = {"description": "Too many tags", "tags": "t1, t2, t3, t4, t5, t6"}
     
     response = client.post("/api/photos/", headers=headers, files=file_data, data=form_data)
@@ -56,12 +84,41 @@ def test_create_photo_tags_limit_error(client):
     assert response.json()["detail"] == "You can add a maximum of 5 tags to a photo."
 
 
+def test_upload_rejects_invalid_image_content(client):
+    client.post(
+        "/api/auth/signup",
+        json={"username": "image_user", "email": "image@example.com", "password": "password123"},
+    )
+    headers = get_auth_headers(client, "image@example.com", "password123")
+    response = client.post(
+        "/api/photos/",
+        headers=headers,
+        files={"file": ("image.png", b"not-an-image", "image/png")},
+    )
+    assert response.status_code == 400
+
+
+def test_upload_rejects_oversized_image(client, monkeypatch):
+    client.post(
+        "/api/auth/signup",
+        json={"username": "large_user", "email": "large@example.com", "password": "password123"},
+    )
+    headers = get_auth_headers(client, "large@example.com", "password123")
+    monkeypatch.setattr(settings, "MAX_UPLOAD_SIZE_BYTES", 1)
+    response = client.post(
+        "/api/photos/",
+        headers=headers,
+        files={"file": ("image.png", VALID_IMAGE_BYTES, "image/png")},
+    )
+    assert response.status_code == 413
+
+
 def test_transform_photo_success(client):
     client.post("/api/auth/signup", json={"username": "admin", "email": "admin@example.com", "password": "password123"})
     headers = get_auth_headers(client, "admin@example.com", "password123")
 
     # Спочатку завантажуємо базове фото
-    file_data = {"file": ("test.jpg", b"fake_bytes", "image/jpeg")}
+    file_data = {"file": ("test.png", VALID_IMAGE_BYTES, "image/png")}
     photo_resp = client.post("/api/photos/", headers=headers, files=file_data, data={"description": "Original"})
     photo_id = photo_resp.json()["id"]
 
@@ -91,4 +148,3 @@ def test_photo_sad_paths_and_transformations(client):
     # POST /photos/{id}/transform - Трансформація неіснуючого фото -> 404
     response = client.post("/api/photos/999/transform", headers=headers, json={"preset": "avatar"})
     assert response.status_code == 404
-

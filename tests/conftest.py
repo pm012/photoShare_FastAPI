@@ -10,6 +10,7 @@ from src.services.blacklist import blacklist_service
 from src.services.limiter import limiter  # Імпортуємо лімітер
 from src.services import email as service_email  # Імпортуємо сервіс імейлів
 from src.routes import auth as auth_route
+from src.conf.config import settings
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
@@ -42,13 +43,15 @@ def client(db_session, monkeypatch):
 
     app.dependency_overrides[get_db] = override_get_db
     
-    # 🔥 1. ВИМИКАЄМО RATE LIMITER ДЛЯ ТЕСТІВ, щоб не було помилок 429
+    # ВИМИКАЄМО RATE LIMITER ДЛЯ ТЕСТІВ, щоб не було помилок 429
     limiter.enabled = False
+    monkeypatch.setattr(settings, "MAIL_CONFIRMATION_REQUIRED", False)
 
-    # 🔥 2. МОКАЄМО ВІДПРАВКУ ЛИСТІВ (Заглушка, яка нічого не відправляє і не гальмує тести)
+    # МОКАЄМО ВІДПРАВКУ ЛИСТІВ (Заглушка, яка нічого не відправляє і не гальмує тести)
     async def mock_send_email(email, username, host):
         return None
     monkeypatch.setattr(service_email, "send_verification_email", mock_send_email)
+    monkeypatch.setattr(auth_route, "send_verification_email", mock_send_email)
     monkeypatch.setattr(service_email, "send_reset_password_email", mock_send_email)
     monkeypatch.setattr(auth_route, "send_reset_password_email", mock_send_email)
 

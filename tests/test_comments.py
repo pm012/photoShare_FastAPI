@@ -1,5 +1,5 @@
 import pytest
-from tests.test_photos import get_auth_headers, mock_cloudinary
+from tests.test_photos import VALID_IMAGE_BYTES, get_auth_headers, mock_cloudinary
 
 def test_comment_lifecycle_and_rbac(client):
     # 1. Реєструємо та логінимо Адміна (ID 1)
@@ -11,7 +11,7 @@ def test_comment_lifecycle_and_rbac(client):
     user_headers = get_auth_headers(client, "user@example.com", "password123")
 
     # 3. Адмін завантажує фото
-    file_data = {"file": ("test.jpg", b"fake_bytes", "image/jpeg")}
+    file_data = {"file": ("test.png", VALID_IMAGE_BYTES, "image/png")}
     photo_resp = client.post("/api/photos/", headers=admin_headers, files=file_data, data={"description": "Admin Photo"})
     photo_id = photo_resp.json()["id"]
 
@@ -47,4 +47,3 @@ def test_comment_sad_paths(client):
     # GET /api/photos/{id}/comments - Отримання коментарів для неіснуючого фото -> 404
     response = client.get("/api/photos/999/comments", headers=headers)
     assert response.status_code == 404
-

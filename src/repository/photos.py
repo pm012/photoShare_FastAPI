@@ -81,7 +81,14 @@ def delete_photo(photo_id: int, current_user: User, db: Session) -> Optional[Pho
     db.commit()
     return photo
 
-def search_photos(query_str: Optional[str], tag_name: Optional[str], sort_by: str, order: str, db: Session) -> List[dict]:
+def search_photos(
+    query_str: Optional[str],
+    tag_name: Optional[str],
+    sort_by: str,
+    order: str,
+    db: Session,
+    user_id: Optional[int] = None,
+) -> List[dict]:
     # Базовий запит з підрахунком середньої оцінки
     search_query = db.query(
         Photo,
@@ -96,6 +103,8 @@ def search_photos(query_str: Optional[str], tag_name: Optional[str], sort_by: st
     if tag_name:
         tag_name = tag_name.strip().lower()
         search_query = search_query.join(Photo.tags).filter(Tag.name == tag_name)
+    if user_id is not None:
+        search_query = search_query.filter(Photo.user_id == user_id)
 
     # Групування для коректної агрегації
     search_query = search_query.group_by(Photo.id)

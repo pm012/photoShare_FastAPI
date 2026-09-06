@@ -55,6 +55,17 @@ def get_photo_rating_summary(photo_id: int, db: Session = Depends(get_db), curre
         
     return repository_ratings.get_average_rating(photo_id, db)
 
+@router.get("/{photo_id}/ratings", response_model=List[RatingResponse])
+def get_photo_ratings(
+    photo_id: int,
+    current_user: User = Depends(allowed_management),
+    db: Session = Depends(get_db),
+):
+    photo = repository_photos.get_photo_by_id(photo_id, db)
+    if not photo:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
+    return repository_ratings.get_ratings_by_photo(photo_id, db)
+
 
 @router.delete("/rate/{rating_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_photo_rating(

@@ -46,3 +46,33 @@ def test_user_profile_operations_and_admin_actions(client):
     # DELETE /users/{id} - Видалення неіснуючого юзера -> 404
     response = client.delete("/api/users/999", headers=admin_headers)
     assert response.status_code == 404
+
+
+def test_duplicate_username_is_rejected(client):
+    client.post(
+        "/api/auth/signup",
+        json={"username": "same_name", "email": "first@example.com", "password": "password123"},
+    )
+    response = client.post(
+        "/api/auth/signup",
+        json={"username": "same_name", "email": "second@example.com", "password": "password123"},
+    )
+    assert response.status_code == 409
+
+
+def test_duplicate_username_update_is_rejected(client):
+    client.post(
+        "/api/auth/signup",
+        json={"username": "first", "email": "first@example.com", "password": "password123"},
+    )
+    client.post(
+        "/api/auth/signup",
+        json={"username": "second", "email": "second@example.com", "password": "password123"},
+    )
+    headers = get_auth_headers(client, "second@example.com", "password123")
+    response = client.put(
+        "/api/users/me",
+        headers=headers,
+        json={"username": "first"},
+    )
+    assert response.status_code == 409
