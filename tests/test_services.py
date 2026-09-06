@@ -6,6 +6,8 @@ from src.database.models import UserRole, User
 from src.services.cloudinary import cloudinary_service
 from src.services import email as service_email
 from src.services.qrcode import generate_qr_code_url  # Імпортуємо правильну функцію
+from src.services.auth import auth_service
+from src.database.db import get_db
 
 # 1. Тестуємо рольову модель доступу (RBAC)
 def test_role_access_allowed():
@@ -50,6 +52,24 @@ def test_cloudinary_service_methods(monkeypatch):
     
     url = cloudinary_service.get_transformed_url("123", "avatar")
     assert "c_fill" in url or "avatar" in url
+
+
+@pytest.mark.parametrize("preset", ["black_white", "thumbnail", "unknown"])
+def test_cloudinary_service_transformation_presets(preset):
+    url = cloudinary_service.get_transformed_url("123", preset)
+    assert "123" in url
+
+
+def test_create_access_token_with_custom_expiration():
+    token = auth_service.create_access_token({"sub": "test@example.com"}, expires_delta=5)
+    assert token
+
+
+def test_get_db_closes_session():
+    db_generator = get_db()
+    db_session = next(db_generator)
+    db_generator.close()
+    assert db_session is not None
 
 # 4. Тестуємо сервіс пошта
 @pytest.mark.anyio

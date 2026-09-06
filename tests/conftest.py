@@ -9,6 +9,7 @@ from src.database.db import get_db, Base
 from src.services.blacklist import blacklist_service
 from src.services.limiter import limiter  # Імпортуємо лімітер
 from src.services import email as service_email  # Імпортуємо сервіс імейлів
+from src.routes import auth as auth_route
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
@@ -48,6 +49,8 @@ def client(db_session, monkeypatch):
     async def mock_send_email(email, username, host):
         return None
     monkeypatch.setattr(service_email, "send_verification_email", mock_send_email)
+    monkeypatch.setattr(service_email, "send_reset_password_email", mock_send_email)
+    monkeypatch.setattr(auth_route, "send_reset_password_email", mock_send_email)
 
     # Мокаємо сервіс чорного списку Redis
     monkeypatch.setattr(blacklist_service, "is_token_blacklisted", lambda token: False)
