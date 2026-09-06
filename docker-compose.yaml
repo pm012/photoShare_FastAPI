@@ -1,43 +1,48 @@
 services:
   db:
     image: postgres:15-alpine
-    container_name: photoshare_postgres
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: secret_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: photoshare_db
-    ports:
-      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - photoshare_net
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d photoshare_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7-alpine
-    container_name: photoshare_redis
-    ports:
-      - "6379:6379"
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is required}"]
     networks:
       - photoshare_net
     restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?REDIS_PASSWORD is required}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   web:
     build: .
-    container_name: photoshare_web
     ports:
       - "8000:8000"
-    # Docker сам зчитає ваш локальний .env і прокине змінні у web
     env_file:
-      - .env
+      - ${APP_ENV_FILE:-.env}
     environment:
-      # Перекриваємо тільки хост бази даних, бо всередині докера він має назву db:5432
-      - DATABASE_URL=postgresql+psycopg2://postgres:secret_password@db:5432/photoshare_db
-      - REDIS_HOST=redis
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/photoshare_db
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - photoshare_net
     restart: always

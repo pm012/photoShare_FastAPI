@@ -10,6 +10,9 @@ def get_user_profile_by_username(username: str, db: Session) -> Optional[Tuple[U
     photos_count = db.query(Photo).filter(Photo.user_id == user.id).count()
     return user, photos_count
 
+def get_user_by_username(username: str, db: Session) -> Optional[User]:
+    return db.query(User).filter(User.username == username).first()
+
 def update_user_me(user_id: int, username: str, db: Session) -> Optional[User]:
     user = db.query(User).filter(User.id == user_id).first()
     if user:

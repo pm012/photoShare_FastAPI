@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from fastapi import Request
 
 from src.database.db import get_db
@@ -30,7 +31,14 @@ def update_current_user_profile(
     db: Session = Depends(get_db)
 ):
     # ТЗ: Редагування власного профілю
-    return repository_users.update_user_me(current_user.id, body.username, db)
+    existing_user = repository_users.get_user_by_username(body.username, db)
+    if existing_user and existing_user.id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already exists")
+    try:
+        return repository_users.update_user_me(current_user.id, body.username, db)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already exists")
 
 
 @router.get("/{username}", response_model=UserPublicResponse)
@@ -111,5 +119,3 @@ def delete_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         
     return None
-
-

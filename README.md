@@ -37,6 +37,8 @@ PhotoShare — це сучасний масштабований REST API зас�
    SECRET_KEY=super_secret_key_change_me_in_production_1234567890
    ALGORITHM=HS256
    ACCESS_TOKEN_EXPIRE_MINUTES=30
+   PUBLIC_API_URL=http://localhost:8000
+   MAX_UPLOAD_SIZE_BYTES=10485760
 
    CLOUDINARY_NAME=your_cloudinary_name
    CLOUDINARY_API_KEY=your_cloudinary_api_key
@@ -44,6 +46,8 @@ PhotoShare — це сучасний масштабований REST API зас�
 
    REDIS_HOST=localhost
    REDIS_PORT=6379
+   REDIS_PASSWORD=replace_with_a_random_redis_password
+   POSTGRES_PASSWORD=replace_with_a_random_database_password
 
    # Налаштування SMTP (приклади для Ukr.net)
    MAIL_USERNAME=your_login@ukr.net
@@ -67,6 +71,9 @@ PhotoShare — це сучасний масштабований REST API зас�
    ```bash
    docker compose exec web poetry run alembic upgrade head
    ```
+
+Для Docker Compose змінна `DATABASE_URL` всередині контейнера формується автоматично
+через сервіс `db`; локальне значення в `.env` використовується лише для запуску поза Docker.
 
 Проєкт буде доступний за адресою: **`http://localhost:8000`**  
 Інтерактивна документація Swagger API: **`http://localhost:8000/docs`**
@@ -104,7 +111,7 @@ PhotoShare — це сучасний масштабований REST API зас�
 
 ## Запуск автоматичних тестів (Pytest)
 
-Усі 11 тестів запускаються в повністю ізольованій базі даних у пам'яті (SQLite `:memory:`) та використовують моки для зовнішніх сервісів (Cloudinary, Redis, SMTP). Автоматичний лімітер запитів ізолюється на час тестів. Локальна база даних залишиться незмінною.
+Тести запускаються в повністю ізольованій базі даних у пам'яті (SQLite `:memory:`) та використовують моки для зовнішніх сервісів (Cloudinary, Redis, SMTP). Автоматичний лімітер запитів ізолюється на час тестів. Локальна база даних залишиться незмінною.
 
 Виконайте команду у терміналі:
 

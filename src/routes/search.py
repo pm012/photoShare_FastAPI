@@ -25,16 +25,23 @@ def search_photos(
     tag: Optional[str] = Query(None, description="Назва тегу для пошуку"),
     sort_by: str = Query("date", enum=["date", "rating"], description="Поле сортування: за датою або рейтингом"),
     order: str = Query("desc", enum=["asc", "desc"], description="Напрямок сортування: asc (за зростанням) або desc (за спаданням)"), # <-- НАШ НОВИЙ ПАРАМЕТР
+    user_id: Optional[int] = Query(None, description="ID автора; доступно модераторам та адміністраторам"),
     current_user: User = Depends(allowed_all),
     db: Session = Depends(get_db)
 ):
+    if user_id is not None and current_user.role not in [UserRole.MODERATOR, UserRole.ADMIN]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only moderators and administrators can filter by user.",
+        )
     # Передаємо новий параметр order у репозиторій
     return repository_photos.search_photos(
         query_str=keyword, 
         tag_name=tag, 
         sort_by=sort_by, 
         order=order, 
-        db=db
+        db=db,
+        user_id=user_id,
     )
 
 @router.get("/users", response_model=List[UserMeResponse])

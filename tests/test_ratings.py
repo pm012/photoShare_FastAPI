@@ -35,6 +35,17 @@ def test_full_ratings_lifecycle_and_constraints(client, db_session):
     response = client.post(f"/api/photos/{photo.id}/rate", headers={"Authorization": voter_token}, json={"rate": 5})
     assert response.status_code == 201
 
+    response = client.get(
+        f"/api/photos/{photo.id}/ratings",
+        headers={"Authorization": admin_token},
+    )
+    assert response.status_code == 200
+    assert response.json()[0]["rate"] == 5
+    assert client.get(
+        f"/api/photos/{photo.id}/ratings",
+        headers={"Authorization": voter_token},
+    ).status_code == 403
+
     # 6. Повторна оцінка від того самого юзера -> 400 Bad Request
     response = client.post(f"/api/photos/{photo.id}/rate", headers={"Authorization": voter_token}, json={"rate": 4})
     assert response.status_code == 400
