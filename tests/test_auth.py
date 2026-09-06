@@ -1,3 +1,6 @@
+import jwt
+from src.conf.config import settings
+
 def test_signup_first_user_as_admin(client):
     # Тест: Перший зареєстрований — admin
     response = client.post(
@@ -63,4 +66,30 @@ def test_login_invalid_credentials(client):
             "password": "wrongpassword"
         }
     )
-    assert response.status_code == 401
+    assert response.status_code == 401    
+
+def test_confirm_email_invalid_token(client):
+    response = client.get("/api/auth/confirmed/invalid_token_here")
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid or expired verification token"
+
+def test_confirm_email_already_confirmed(client):
+    # Створюємо користувача
+    client.post("/api/auth/signup", json={"username": "confirmed_user", "email": "conf@test.com", "password": "password"})
+    
+    # Генеруємо токен
+    to_encode = {"sub": "conf@test.com", "scope": "email_verification"}
+    token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    
+    response = client.get(f"/api/auth/confirmed/{token}")
+    assert response.status_code == 200
+    assert response.json()["message"] == "Your email is already confirmed."
+
+
+def test_reset_password_invalid_scope(client):
+    # Токен має неправильний scope
+    to_encode = {"sub": "admin@test.com", "scope": "wrong_scope"}
+    token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    
+    response = client.post(f"/api/auth/reset_password/{token}", json={"password": "newpassword"})
+    assert response.status_code == 400

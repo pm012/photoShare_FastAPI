@@ -28,7 +28,7 @@ services:
     container_name: photoshare_web
     ports:
       - "8000:8000"
-    # 🔥 МАГІЯ ТУТ: Docker сам зчитає ваш локальний .env і прокине змінні у web
+    # Docker сам зчитає ваш локальний .env і прокине змінні у web
     env_file:
       - .env
     environment:

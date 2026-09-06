@@ -114,3 +114,27 @@ def reset_password(token: str, body: ResetPasswordModel, db: Session = Depends(g
     db.commit()
     return {"message": "Password has been successfully updated. You can now log in."}
 
+@router.get("/confirmed/{token}")
+def confirm_email(token: str, db: Session = Depends(get_db)):
+    try:
+        # Розшифровуємо токен та перевіряємо його призначення
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload.get("scope") != "email_verification":
+            raise HTTPException(status_code=400, detail="Invalid token scope")
+        email = payload.get("sub")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification token")
+
+    # Шукаємо користувача в базі за email
+    user = repository_auth.get_user_by_email(email, db)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.is_confirmed:
+        return {"message": "Your email is already confirmed."}
+    
+    # Активуємо статус верифікації
+    user.is_confirmed = True
+    db.commit()
+    return {"message": "Email successfully confirmed! You can now log in."}
+

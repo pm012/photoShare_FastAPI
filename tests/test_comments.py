@@ -31,3 +31,20 @@ def test_comment_lifecycle_and_rbac(client):
     # 7. ТЗ: Адмін успішно видаляє коментар іншого користувача -> код 24
     delete_admin_resp = client.delete(f"/api/photos/comments/{comment_id}", headers=admin_headers)
     assert delete_admin_resp.status_code == 204
+    
+def test_comment_sad_paths(client):
+    client.post("/api/auth/signup", json={"username": "moder", "email": "mod@test.com", "password": "password"})
+    headers = get_auth_headers(client, "mod@test.com", "password")
+
+    # PUT /photos/comments/{id} - Редагування неіснуючого коментаря -> 404
+    response = client.put("/api/photos/comments/999", headers=headers, json={"text": "New Text"})
+    assert response.status_code == 404
+
+    # DELETE /photos/comments/{id} - Видалення неіснуючого коментаря -> 404
+    response = client.delete("/api/photos/comments/999", headers=headers)
+    assert response.status_code == 404
+
+    # GET /api/photos/{id}/comments - Отримання коментарів для неіснуючого фото -> 404
+    response = client.get("/api/photos/999/comments", headers=headers)
+    assert response.status_code == 404
+

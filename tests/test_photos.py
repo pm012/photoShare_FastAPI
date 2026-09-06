@@ -71,3 +71,24 @@ def test_transform_photo_success(client):
     data = response.json()
     assert "transformed_url" in data
     assert "qr_code_url" in data
+    
+def test_photo_sad_paths_and_transformations(client):
+    client.post("/api/auth/signup", json={"username": "photographer", "email": "photo@test.com", "password": "password"})
+    headers = get_auth_headers(client, "photo@test.com", "password")
+
+    # PUT /photos/{id} - Оновлення опису неіснуючого фото -> 404
+    response = client.put("/api/photos/999", headers=headers, json={"description": "New"})
+    assert response.status_code == 404
+
+    # GET /photos/{id} - Отримання неіснуючого фото -> 404
+    response = client.get("/api/photos/999", headers=headers)
+    assert response.status_code == 404
+
+    # DELETE /photos/{id} - Видалення неіснуючого фото -> 404
+    response = client.delete("/api/photos/999", headers=headers)
+    assert response.status_code == 404
+
+    # POST /photos/{id}/transform - Трансформація неіснуючого фото -> 404
+    response = client.post("/api/photos/999/transform", headers=headers, json={"preset": "avatar"})
+    assert response.status_code == 404
+
