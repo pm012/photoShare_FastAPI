@@ -1,5 +1,5 @@
 from io import BytesIO
-from typing import List, Optional
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from fastapi import Request
 from PIL import Image, UnidentifiedImageError
@@ -9,7 +9,6 @@ from src.database.db import get_db
 from src.database.models import User, UserRole
 from src.schemas.photos import PhotoResponse, PhotoUpdateDescription
 from src.repository import photos as repository_photos
-from src.services.auth import auth_service
 from src.services.cloudinary import cloudinary_service
 from src.services.roles import RoleAccess
 from src.services.limiter import limiter

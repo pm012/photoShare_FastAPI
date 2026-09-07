@@ -1,4 +1,3 @@
-import pytest
 from tests.test_photos import get_auth_headers
 
 def test_user_profile_operations_and_admin_actions(client):

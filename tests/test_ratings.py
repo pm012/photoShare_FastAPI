@@ -1,6 +1,4 @@
-import pytest
-from src.database.models import Photo, Rating
-from src.repository import ratings as repository_ratings
+from src.database.models import Photo
 
 def test_full_ratings_lifecycle_and_constraints(client, db_session):
     # 1. Реєструємо трьох користувачів: Admin, Автор фото, Оцінювач

@@ -1,7 +1,7 @@
 from typing import Optional, List
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-from src.database.models import Rating, Photo
+from src.database.models import Rating
 
 def create_rate(photo_id: int, user_id: int, rate: int, db: Session) -> Rating:
     new_rating = Rating(

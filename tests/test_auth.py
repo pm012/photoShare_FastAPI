@@ -33,7 +33,7 @@ def test_signup_second_user_as_user(client):
         }
     )
     assert response.status_code == 201
-    assert response.json()["role"] == "user"  # Тепер цей assert пройде на 100%
+    assert response.json()["role"] == "user"  
 
 
 def test_login_success(client):

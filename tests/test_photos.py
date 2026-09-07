@@ -2,7 +2,6 @@ import base64
 from unittest.mock import MagicMock
 import pytest
 from src.services.cloudinary import cloudinary_service
-from src.database.models import User
 from src.conf.config import settings
 
 VALID_IMAGE_BYTES = base64.b64decode(

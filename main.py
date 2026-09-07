@@ -2,7 +2,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware  # <-- Використовуємо правильну мідлварь
+from slowapi.middleware import SlowAPIMiddleware  # Використовуємо правильну мідлварь
 from fastapi.responses import PlainTextResponse 
 
 from src.routes import auth, photos, transformations, comments, users, ratings, search

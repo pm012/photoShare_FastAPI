@@ -96,6 +96,15 @@ PhotoShare — це сучасний масштабований REST API зас�
    docker compose up -d db redis
    ```
 
+   _Увага!!! Якщо треба перестворити базу заново використовуйте замість цієї команди кілька наступних:_
+
+   ```bash
+   docker compose down -v
+   docker compose up -d db redis
+   ```
+
+   Увага: docker compose down -v видаляє volumes, тому всі дані PostgreSQL буде втрачено.
+
 3. **Застосуйте міграції до локальної БД:**
 
    ```bash
