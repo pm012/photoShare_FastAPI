@@ -24,7 +24,7 @@ def search_photos(
     keyword: Optional[str] = Query(None, description="Ключове слово для пошуку в описі світлини"),
     tag: Optional[str] = Query(None, description="Назва тегу для пошуку"),
     sort_by: str = Query("date", enum=["date", "rating"], description="Поле сортування: за датою або рейтингом"),
-    order: str = Query("desc", enum=["asc", "desc"], description="Напрямок сортування: asc (за зростанням) або desc (за спаданням)"), # <-- НАШ НОВИЙ ПАРАМЕТР
+    order: str = Query("desc", enum=["asc", "desc"], description="Напрямок сортування: asc (за зростанням) або desc (за спаданням)"), # Paremeter for sorting method (asc or desc)
     user_id: Optional[int] = Query(None, description="ID автора; доступно модераторам та адміністраторам"),
     current_user: User = Depends(allowed_all),
     db: Session = Depends(get_db)
@@ -47,7 +47,7 @@ def search_photos(
 @router.get("/users", response_model=List[UserMeResponse])
 def search_users_for_admin(
     query: str = Query(..., min_length=1, description="Ім'я або Email користувача"),
-    current_user: User = Depends(allowed_management),  # ТІЛЬКИ Moderator/Admin за ТЗ
+    current_user: User = Depends(allowed_management),  # PRD requirement: only  Moderator/Admin can see other users
     db: Session = Depends(get_db)
 ):
     # Адмінський пошук користувачів за ТЗ

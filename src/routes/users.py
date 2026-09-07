@@ -7,7 +7,6 @@ from src.database.db import get_db
 from src.database.models import User, UserRole
 from src.schemas.users import UserPublicResponse, UserMeResponse, UserUpdateModel
 from src.repository import users as repository_users
-from src.services.auth import auth_service
 from src.services.roles import RoleAccess
 from src.services.limiter import limiter
 
