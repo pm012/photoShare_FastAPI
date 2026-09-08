@@ -26,6 +26,9 @@ def search_photos(
     sort_by: str = Query("date", enum=["date", "rating"], description="Поле сортування: за датою або рейтингом"),
     order: str = Query("desc", enum=["asc", "desc"], description="Напрямок сортування: asc (за зростанням) або desc (за спаданням)"), # Paremeter for sorting method (asc or desc)
     user_id: Optional[int] = Query(None, description="ID автора; доступно модераторам та адміністраторам"),
+    page: int = Query(1, ge=1, description="Номер сторінки"),
+    page_size: int = Query(20, ge=1, le=100, description="Кількість фото на сторінці"),
+    min_rating: Optional[float] = Query(None, ge=0, le=5, description="Мінімальний середній рейтинг"),
     current_user: User = Depends(allowed_all),
     db: Session = Depends(get_db)
 ):
@@ -42,6 +45,9 @@ def search_photos(
         order=order, 
         db=db,
         user_id=user_id,
+        page=page,
+        page_size=page_size,
+        min_rating=min_rating,
     )
 
 @router.get("/users", response_model=List[UserMeResponse])

@@ -6,7 +6,9 @@ from fastapi import Request
 from src.database.db import get_db
 from src.database.models import User, UserRole
 from src.schemas.users import UserPublicResponse, UserMeResponse, UserUpdateModel
+from src.schemas.search import PhotoSearchResponse
 from src.repository import users as repository_users
+from src.repository import photos as repository_photos
 from src.services.roles import RoleAccess
 from src.services.limiter import limiter
 
@@ -49,6 +51,20 @@ def get_user_public_profile(username: str, db: Session = Depends(get_db), curren
     
     user, photos_count = profile_data
     return {"username": user.username, "created_at": user.created_at, "photos_count": photos_count}
+
+@router.get("/{username}/photos", response_model=list[PhotoSearchResponse])
+def get_user_public_photos(username: str, db: Session = Depends(get_db), current_user: User = Depends(allowed_all)):
+    user = repository_users.get_user_by_username(username, db)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return repository_photos.search_photos(
+        query_str=None,
+        tag_name=None,
+        sort_by="date",
+        order="desc",
+        db=db,
+        user_id=user.id,
+    )
 
 
 @router.patch("/{user_id}/ban", response_model=UserMeResponse)

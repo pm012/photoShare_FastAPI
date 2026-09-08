@@ -88,6 +88,9 @@ def search_photos(
     order: str,
     db: Session,
     user_id: Optional[int] = None,
+    page: int = 1,
+    page_size: int = 20,
+    min_rating: Optional[float] = None,
 ) -> List[dict]:
     # Базовий запит з підрахунком середньої оцінки
     search_query = db.query(
@@ -108,6 +111,8 @@ def search_photos(
 
     # Групування для коректної агрегації
     search_query = search_query.group_by(Photo.id)
+    if min_rating is not None:
+        search_query = search_query.having(func.coalesce(func.avg(Rating.rate), 0.0) >= min_rating)
 
     # Визначаємо поле для сортування за ТЗ
     sort_field = "avg_rating" if sort_by == "rating" else Photo.created_at
@@ -118,13 +123,14 @@ def search_photos(
     else:
         search_query = search_query.order_by(desc(sort_field))
 
-    results = search_query.all()
+    results = search_query.offset((page - 1) * page_size).limit(page_size).all()
 
     mapped_results = []
     for photo, avg_rating in results:
         mapped_results.append({
             "id": photo.id,
             "user_id": photo.user_id,
+            "username": photo.user.username,
             "url": photo.url,
             "description": photo.description,
             "tags": photo.tags,

@@ -223,6 +223,13 @@
 .profile-photo div { display: flex; justify-content: space-between; gap: 10px; padding: 12px; }
 .profile-photo p { overflow: hidden; color: #3e3531; text-overflow: ellipsis; white-space: nowrap; }
 .profile-photo span { color: #c64c32; font-size: 13px; font-weight: 800; }
+.public-profile-page { width: min(1126px, 100%); margin: 0 auto; padding: 34px 42px 72px; box-sizing: border-box; text-align: left; }
+.public-profile-hero { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 22px; padding: 24px 0 36px; margin-bottom: 42px; border-bottom: 1px solid #ded1c7; }
+.public-profile-hero h2 { margin: 5px 0 8px; color: #2d2725; font-size: clamp(30px, 4vw, 46px); letter-spacing: -1.5px; }
+.public-profile-hero p:not(.eyebrow) { color: #756b68; }
+.public-profile-stat { display: grid; gap: 4px; min-width: 110px; padding: 16px; background: #f2ebe4; border: 1px solid #ded1c7; text-align: center; }
+.public-profile-stat strong { color: #c64c32; font-size: 28px; }
+.public-profile-stat span { color: #756b68; font-size: 12px; }
 .success-message { padding: 12px 14px; margin: 0 0 20px; color: #276340; background: #e8f4eb; border-left: 3px solid #4d9b69; }
 
 .admin-page { width: min(1126px, 100%); margin: 0 auto; padding: 56px 42px 72px; box-sizing: border-box; text-align: left; }
@@ -250,6 +257,21 @@
 .table-actions .secondary-button, .table-actions .danger-button { padding: 8px 10px; font-size: 12px; }
 .pagination-controls { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 18px 0 0; color: #756b68; }
 .pagination-controls .secondary-button { padding: 8px 11px; font-size: 13px; }
+
+.moderation-page { width: min(1126px, 100%); margin: 0 auto; padding: 56px 42px 72px; box-sizing: border-box; text-align: left; }
+.moderation-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 18px; margin-bottom: 24px; background: #f2ebe4; border: 1px solid #ded1c7; }
+.moderation-filters label { display: grid; gap: 7px; color: #3e3531; font-size: 13px; font-weight: 800; }
+.moderation-filters select { min-width: 0; padding: 11px; color: #2d2725; border: 1px solid #d4c7bd; border-radius: 4px; background: #fffdf9; color-scheme: light; font: inherit; }
+.moderation-filters option { color: #2d2725; background: #fffdf9; }
+.moderation-photo { display: flex; gap: 18px; align-items: center; padding: 18px; margin-bottom: 34px; background: #fffdf9; border: 1px solid #ded1c7; }
+.moderation-photo img { width: 110px; height: 90px; object-fit: cover; }
+.moderation-photo h3 { margin: 5px 0; color: #2d2725; }
+.moderation-photo span { color: #756b68; font-size: 13px; }
+.rating-list { display: grid; gap: 1px; border: 1px solid #ded1c7; background: #ded1c7; }
+.rating-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; background: #fffdf9; }
+.rating-row div { display: grid; gap: 4px; }
+.rating-row strong { color: #c64c32; }
+.rating-row small { color: #756b68; }
 
 .photo-page { width: min(1126px, 100%); margin: 0 auto; padding: 34px 42px 72px; box-sizing: border-box; text-align: left; }
 .back-button { padding: 0; margin-bottom: 24px; color: #756b68; background: transparent; border: 0; cursor: pointer; font: inherit; }
@@ -377,6 +399,8 @@
 .photo-card { overflow: hidden; background: #fffdf9; border: 1px solid #e2d7ce; box-shadow: 0 10px 24px rgba(73, 47, 35, .08); }
 .photo-card > img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #e8ded6; }
 .photo-card-body { padding: 16px; }
+.photo-author { display: block; padding: 0; margin-bottom: 10px; color: #9e2f24; background: transparent; border: 0; cursor: pointer; font: inherit; font-size: 13px; font-weight: 800; }
+.photo-author:hover { text-decoration: underline; }
 .photo-rating { margin-bottom: 8px; color: #c64c32; font-size: 14px; font-weight: 800; }
 .photo-description { min-height: 48px; color: #3e3531; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
@@ -404,7 +428,12 @@
   .nav-button { flex: 1; }
   .feed-page { padding: 34px 18px 52px; }
   .profile-page { padding: 34px 18px 52px; }
+  .public-profile-page { padding: 28px 18px 52px; }
+  .public-profile-hero { grid-template-columns: auto 1fr; }
+  .public-profile-stat { grid-column: 2; justify-self: start; }
   .admin-page { padding: 34px 18px 52px; }
+  .moderation-page { padding: 34px 18px 52px; }
+  .moderation-filters { grid-template-columns: 1fr; }
   .admin-heading { flex-direction: column; }
   .admin-search { flex-direction: column; }
   .photo-page { padding: 28px 18px 52px; }
