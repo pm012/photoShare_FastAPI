@@ -1,18 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import UploadPhoto from './UploadPhoto';
 import api from './api';
 
-function PhotoFeed() {
+function PhotoFeed({ onPhotoSelect }) {
     const [photos, setPhotos] = useState([]);
     const [keyword, setKeyword] = useState('');
     const [sortBy, setSortBy] = useState('date');
     const [order, setOrder] = useState('desc');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [isUploadOpen, setIsUploadOpen] = useState(false);
 
     // Функція для завантаження фотографій з нашого бекенду
-    const fetchPhotos = async () => {
+    const fetchPhotos = useCallback(async () => {
         try {
             setError('');
+            setLoading(true);
             // Формуємо query-параметри для нашого розширеного пошуку
             const response = await api.get('/search/photos', {
                 params: {
@@ -24,93 +27,95 @@ function PhotoFeed() {
             setPhotos(response.data);
         } catch (err) {
             setError(err.response?.data?.detail || 'Не вдалося завантажити світлини.');
+        } finally {
+            setLoading(false);
         }
-    };
+    }, [keyword, order, sortBy]);
 
     // Автоматично викликаємо fetchPhotos при першому завантаженні сторінки,
     // а також кожен раз, коли користувач змінює сортування (sortBy чи order)
     useEffect(() => {
-        fetchPhotos();
-    }, [sortBy, order]);
+        const request = window.setTimeout(fetchPhotos, 0);
+        return () => window.clearTimeout(request);
+    }, [fetchPhotos]);
+
+    useEffect(() => {
+        const handleEscape = (event) => {
+            if (event.key === 'Escape') setIsUploadOpen(false);
+        };
+        window.addEventListener('keydown', handleEscape);
+        return () => window.removeEventListener('keydown', handleEscape);
+    }, []);
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
-        fetchPhotos(); // Шукаємо при натисканні на кнопку
+        fetchPhotos();
     };
 
     return (
-        <div style={{ maxWidth: '900px', margin: '30px auto', padding: '0 20px' }}>
-            <h2>Стрічка світлин PhotoShare</h2>
-
-            {/* 2. ВМОНТУВАЛИ ФОРМУ ЗАВАНТАЖЕННЯ НАД СТРІЧКОЮ */}
-            {/* Передаємо функцію fetchPhotos, щоб стрічка сама оновилася після завантаження нового фото */}
-            <UploadPhoto onUploadSuccess={fetchPhotos} />
+        <main className="feed-page">
+            <header className="feed-header">
+                <div>
+                    <p className="eyebrow">PhotoShare / explore</p>
+                    <h2>Стрічка світлин</h2>
+                    <p className="feed-subtitle">Ідеї, моменти та історії спільноти в одному місці.</p>
+                </div>
+                <button className="primary-button upload-trigger" onClick={() => setIsUploadOpen(true)}>
+                    <span aria-hidden="true">+</span> Завантажити фото
+                </button>
+            </header>
 
             {/* БЛОК ПОШУКУ ТА ФІЛЬТРАЦІЇ (Панель керування для UI) */}
-            <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <form className="feed-controls" onSubmit={handleSearchSubmit}>
                 <input
                     type="text"
                     placeholder="Пошук за описом..."
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
-                    style={{ padding: '8px', flex: '1', minWidth: '200px' }}
+                    aria-label="Пошук за описом"
                 />
-                <button type="submit" style={{ padding: '8px 15px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                    Шукати
-                </button>
-
-                <label>Сортувати за:</label>
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={{ padding: '8px' }}>
+                <button className="secondary-button" type="submit">Шукати</button>
+                <label className="select-field"><span>Сортувати</span><select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                     <option value="date">Датою</option>
                     <option value="rating">Рейтингом</option>
-                </select>
-
-                <select value={order} onChange={(e) => setOrder(e.target.value)} style={{ padding: '8px' }}>
+                </select></label>
+                <select aria-label="Порядок сортування" value={order} onChange={(e) => setOrder(e.target.value)}>
                     <option value="desc">Спаданням (New/High)</option>
                     <option value="asc">Зростанням (Old/Low)</option>
                 </select>
             </form>
 
-            {error && <p style={{ color: 'red' }}>{error}</p>}
+            {error && <p className="error-message" role="alert">{error}</p>}
 
             {/* СТРІЧКА СВІТЛИН (Мережа карток у стилі Instagram) */}
-            {photos.length === 0 ? (
-                <p style={{ textAlign: 'center', color: '#666' }}>Світлин не знайдено. Будьте першим, хто завантажить фото!</p>
+            {loading ? (
+                <div className="feed-status" role="status">Завантажуємо стрічку...</div>
+            ) : photos.length === 0 ? (
+                <div className="feed-status">Світлин не знайдено. Будьте першим, хто завантажить фото.</div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
+                <div className="photo-grid">
                     {photos.map((photo) => (
-                        <div key={photo.id} style={{ border: '1px solid #ddd', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
-
-                            {/* Відображаємо реальне зображення з Cloudinary за лінком з бази */}
-                            <img
-                                src={photo.url}
-                                alt={photo.description}
-                                style={{ width: '100%', height: '200px', objectFit: 'cover' }}
-                            />
-
-                            <div style={{ padding: '15px' }}>
-                                <p style={{ fontWeight: 'bold', margin: '0 0 10px 0' }}>
-                                    ⭐ Рейтинг: {photo.average_rating || '0.0'}
-                                </p>
-                                <p style={{ margin: '0 0 10px 0', color: '#333' }}>
+                        <article className="photo-card" key={photo.id} onClick={() => onPhotoSelect(photo.id)} onKeyDown={(event) => event.key === 'Enter' && onPhotoSelect(photo.id)} tabIndex="0" role="button">
+                            <img src={photo.url} alt={photo.description || 'Світлина PhotoShare'} />
+                            <div className="photo-card-body">
+                                <p className="photo-rating">★ {photo.average_rating || '0.0'}</p>
+                                <p className="photo-description">
                                     {photo.description || <i>Без опису</i>}
                                 </p>
-
-                                {/* Виводимо список тегів */}
-                                <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                                <div className="tag-list">
                                     {photo.tags?.map((tag) => (
-                                        <span key={tag.id} style={{ backgroundColor: '#e9ecef', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', color: '#495057' }}>
+                                        <span className="tag" key={tag.id}>
                                             #{tag.name}
                                         </span>
                                     ))}
                                 </div>
                             </div>
-
-                        </div>
+                        </article>
                     ))}
                 </div>
             )}
-        </div>
+            {isUploadOpen && <UploadPhoto onClose={() => setIsUploadOpen(false)} onUploadSuccess={fetchPhotos} />}
+        </main>
     );
 }
 

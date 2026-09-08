@@ -29,12 +29,15 @@ def ban_user(user_id: int, ban_status: bool, db: Session) -> Optional[User]:
         db.refresh(user)
     return user
 
-def search_users_admin(search_str: str, db: Session) -> List[User]:
+def search_users_admin(search_str: str, db: Session, page: int = 1, page_size: int = 20) -> List[User]:
     # Шукаємо користувачів за частковим збігом в username або email (ігноруючи регістр)
-    return db.query(User).filter(
-        (User.username.ilike(f"%{search_str}%")) | 
-        (User.email.ilike(f"%{search_str}%"))
-    ).all()
+    users_query = db.query(User)
+    if search_str:
+        users_query = users_query.filter(
+            (User.username.ilike(f"%{search_str}%")) |
+            (User.email.ilike(f"%{search_str}%"))
+        )
+    return users_query.order_by(User.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
     
 def delete_user(user_id: int, db: Session) -> Optional[User]:
     user = db.query(User).filter(User.id == user_id).first()

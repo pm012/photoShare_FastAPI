@@ -46,9 +46,16 @@ def search_photos(
 
 @router.get("/users", response_model=List[UserMeResponse])
 def search_users_for_admin(
-    query: str = Query(..., min_length=1, description="Ім'я або Email користувача"),
+    query: Optional[str] = Query(None, min_length=1, description="Ім'я або Email користувача"),
+    page: int = Query(1, ge=1, description="Номер сторінки"),
+    page_size: int = Query(20, ge=1, le=100, description="Кількість користувачів на сторінці"),
     current_user: User = Depends(allowed_management),  # PRD requirement: only  Moderator/Admin can see other users
     db: Session = Depends(get_db)
 ):
     # Адмінський пошук користувачів за ТЗ
-    return repository_users.search_users_admin(search_str=query, db=db)
+    return repository_users.search_users_admin(
+        search_str=query or "",
+        db=db,
+        page=page,
+        page_size=page_size,
+    )
