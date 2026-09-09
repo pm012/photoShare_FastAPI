@@ -17,4 +17,19 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
+api.interceptors.response.use((response) => response, (error) => {
+  const status = error.response?.status;
+  const requestUrl = error.config?.url || '';
+  const isLoginRequest = requestUrl.includes('/auth/login');
+  const detail = String(error.response?.data?.detail || '').toLowerCase();
+  const isInactiveAccount = status === 403 && (detail.includes('banned') || detail.includes('inactive'));
+
+  if ((status === 401 || isInactiveAccount) && !isLoginRequest) {
+    localStorage.removeItem('token');
+    window.dispatchEvent(new Event('photoshare-auth-expired'));
+  }
+
+  return Promise.reject(error);
+});
+
 export default api;

@@ -86,6 +86,15 @@ def login(request: Request, body: OAuth2PasswordRequestForm = Depends(), db: Ses
     access_token = auth_service.create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
+@router.post("/refresh", response_model=TokenModel)
+@limiter.limit("12/minute")
+def refresh_access_token(
+    request: Request,
+    current_user: User = Depends(auth_service.get_current_user),
+):
+    access_token = auth_service.create_access_token(data={"sub": current_user.email})
+    return {"access_token": access_token, "token_type": "bearer"}
+
 @router.post("/logout", status_code=status.HTTP_200_OK)
 def logout(token: str = Depends(oauth2_scheme), current_user: User = Depends(auth_service.get_current_user),
     db: Session = Depends(get_db)):

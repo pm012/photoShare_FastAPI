@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Login from './Login';
 import PhotoFeed from './PhotoFeed';
 import Profile from './Profile';
@@ -13,12 +13,16 @@ const normalizeRole = (role) => {
   return value.includes('.') ? value.split('.').pop() : value;
 };
 
+const INACTIVITY_TIMEOUT_MS = 20 * 60 * 1000;
+const TOKEN_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(localStorage.getItem('token')));
   const [activeView, setActiveView] = useState('feed');
   const [selectedPhotoId, setSelectedPhotoId] = useState(null);
   const [selectedUsername, setSelectedUsername] = useState(null);
   const [currentRole, setCurrentRole] = useState(null);
+  const lastRefreshAt = useRef(0);
 
   useEffect(() => {
     if (!isAuthenticated) return undefined;
@@ -27,21 +31,84 @@ function App() {
         const response = await api.get('/users/me');
         setCurrentRole(normalizeRole(response.data.role));
       } catch {
+        localStorage.removeItem('token');
+        setIsAuthenticated(false);
         setCurrentRole(null);
       }
     }, 0);
     return () => window.clearTimeout(request);
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+
+    let inactivityTimer;
+    const refreshToken = async () => {
+      if (Date.now() - lastRefreshAt.current < TOKEN_REFRESH_INTERVAL_MS) return;
+      try {
+        const response = await api.post('/auth/refresh');
+        localStorage.setItem('token', response.data.access_token);
+        lastRefreshAt.current = Date.now();
+      } catch {
+        // The response interceptor ends the session when the token is invalid.
+      }
+    };
+    const resetInactivityTimer = () => {
+      window.clearTimeout(inactivityTimer);
+      inactivityTimer = window.setTimeout(() => {
+        localStorage.removeItem('token');
+        window.dispatchEvent(new Event('photoshare-auth-expired'));
+      }, INACTIVITY_TIMEOUT_MS);
+      refreshToken();
+    };
+    const activityEvents = ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'];
+
+    activityEvents.forEach((eventName) => window.addEventListener(eventName, resetInactivityTimer, { passive: true }));
+    resetInactivityTimer();
+
+    return () => {
+      window.clearTimeout(inactivityTimer);
+      activityEvents.forEach((eventName) => window.removeEventListener(eventName, resetInactivityTimer));
+    };
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      setIsAuthenticated(false);
+      setActiveView('feed');
+      setSelectedPhotoId(null);
+      setSelectedUsername(null);
+      setCurrentRole(null);
+      lastRefreshAt.current = 0;
+    };
+
+    window.addEventListener('photoshare-auth-expired', handleAuthExpired);
+    return () => window.removeEventListener('photoshare-auth-expired', handleAuthExpired);
+  }, []);
+
   const handleLoginSuccess = () => {
+    setActiveView('feed');
+    setSelectedPhotoId(null);
+    setSelectedUsername(null);
+    setCurrentRole(null);
+    lastRefreshAt.current = 0;
     setIsAuthenticated(true);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setIsAuthenticated(false);
-    setActiveView('feed');
-    setCurrentRole(null);
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // Локальну сесію все одно потрібно завершити, якщо API недоступний.
+    } finally {
+      localStorage.removeItem('token');
+      setIsAuthenticated(false);
+      setActiveView('feed');
+      setSelectedPhotoId(null);
+      setSelectedUsername(null);
+      setCurrentRole(null);
+      lastRefreshAt.current = 0;
+    }
   };
 
   return (
