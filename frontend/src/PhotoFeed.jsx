@@ -14,6 +14,7 @@ function PhotoFeed({ onPhotoSelect, onProfileSelect }) {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
+    const [lightboxPhoto, setLightboxPhoto] = useState(null);
 
     // Функція для завантаження фотографій з нашого бекенду
     const fetchPhotos = useCallback(async (requestedPage = page) => {
@@ -51,7 +52,10 @@ function PhotoFeed({ onPhotoSelect, onProfileSelect }) {
 
     useEffect(() => {
         const handleEscape = (event) => {
-            if (event.key === 'Escape') setIsUploadOpen(false);
+            if (event.key === 'Escape') {
+                setIsUploadOpen(false);
+                setLightboxPhoto(null);
+            }
         };
         window.addEventListener('keydown', handleEscape);
         return () => window.removeEventListener('keydown', handleEscape);
@@ -86,30 +90,28 @@ function PhotoFeed({ onPhotoSelect, onProfileSelect }) {
 
             {/* БЛОК ПОШУКУ ТА ФІЛЬТРАЦІЇ (Панель керування для UI) */}
             <form className="feed-controls" onSubmit={handleSearchSubmit}>
-                <input
-                    type="text"
-                    placeholder="Пошук за описом..."
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                    aria-label="Пошук за описом"
-                />
-                <input type="text" placeholder="Тег..." value={tag} onChange={(e) => { setTag(e.target.value); setPage(1); }} aria-label="Пошук за тегом" />
-                <button className="secondary-button" type="submit">Шукати</button>
-                <label className="select-field"><span>Сортувати</span><select value={sortBy} onChange={(e) => { setSortBy(e.target.value); setPage(1); }}>
-                    <option value="date">Датою</option>
-                    <option value="rating">Рейтингом</option>
-                </select></label>
-                <select aria-label="Порядок сортування" value={order} onChange={(e) => { setOrder(e.target.value); setPage(1); }}>
-                    <option value="desc">Спаданням (New/High)</option>
-                    <option value="asc">Зростанням (Old/Low)</option>
-                </select>
-                <select aria-label="Мінімальний рейтинг" value={minRating} onChange={(e) => { setMinRating(e.target.value); setPage(1); }}>
-                    <option value="">Будь-який рейтинг</option>
-                    <option value="4">Від 4 зірок</option>
-                    <option value="3">Від 3 зірок</option>
-                    <option value="2">Від 2 зірок</option>
-                </select>
-                <button className="secondary-button" type="button" onClick={handleResetFilters}>Очистити</button>
+                <div className="feed-control-row feed-search-row">
+                    <input className="search-input" type="text" placeholder="Пошук за описом..." value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1); }} aria-label="Пошук за описом" />
+                    <input type="text" placeholder="Тег..." value={tag} onChange={(e) => { setTag(e.target.value); setPage(1); }} aria-label="Пошук за тегом" />
+                    <button className="primary-button search-button" type="submit">Шукати</button>
+                </div>
+                <div className="feed-control-row feed-sort-row">
+                    <label className="select-field"><span>Сортувати за</span><select value={sortBy} onChange={(e) => { setSortBy(e.target.value); setPage(1); }}>
+                        <option value="date">Датою</option>
+                        <option value="rating">Рейтингом</option>
+                    </select></label>
+                    <label className="select-field"><span>Порядок</span><select aria-label="Порядок сортування" value={order} onChange={(e) => { setOrder(e.target.value); setPage(1); }}>
+                        <option value="desc">Спаданням</option>
+                        <option value="asc">Зростанням</option>
+                    </select></label>
+                    <label className="select-field"><span>Рейтинг</span><select aria-label="Мінімальний рейтинг" value={minRating} onChange={(e) => { setMinRating(e.target.value); setPage(1); }}>
+                        <option value="">Будь-який</option>
+                        <option value="4">Від 4 зірок</option>
+                        <option value="3">Від 3 зірок</option>
+                        <option value="2">Від 2 зірок</option>
+                    </select></label>
+                    <button className="secondary-button reset-button" type="button" onClick={handleResetFilters}>Очистити</button>
+                </div>
             </form>
 
             {error && <p className="error-message" role="alert">{error}</p>}
@@ -123,10 +125,12 @@ function PhotoFeed({ onPhotoSelect, onProfileSelect }) {
                 <div className="photo-grid">
                     {photos.map((photo) => (
                         <article className="photo-card" key={photo.id} onClick={() => onPhotoSelect(photo.id)} onKeyDown={(event) => event.key === 'Enter' && onPhotoSelect(photo.id)} tabIndex="0" role="button">
-                            <img src={photo.url} alt={photo.description || 'Світлина PhotoShare'} />
+                            <button className="photo-image-button" type="button" onClick={(event) => { event.stopPropagation(); setLightboxPhoto(photo); }} aria-label="Відкрити повнорозмірне зображення">
+                                <img src={photo.url} alt={photo.description || 'Світлина PhotoShare'} />
+                            </button>
                             <div className="photo-card-body">
                                 <button className="photo-author" onClick={(event) => { event.stopPropagation(); onProfileSelect(photo.username); }}>@{photo.username}</button>
-                                <p className="photo-rating">★ {photo.average_rating || '0.0'}</p>
+                                <p className="photo-rating" aria-label={`Рейтинг ${photo.average_rating || '0.0'} з 5`}><span className="stars" aria-hidden="true">{[1, 2, 3, 4, 5].map((star) => <span className={star <= Math.round(photo.average_rating || 0) ? 'star filled' : 'star'} key={star}>★</span>)}</span><span>{Number(photo.average_rating || 0).toFixed(1)}</span></p>
                                 <p className="photo-description">
                                     {photo.description || <i>Без опису</i>}
                                 </p>
@@ -144,6 +148,7 @@ function PhotoFeed({ onPhotoSelect, onProfileSelect }) {
             )}
             {!loading && photos.length > 0 && <div className="pagination-controls"><button className="secondary-button" onClick={() => fetchPhotos(page - 1)} disabled={page === 1 || loading}>← Попередня</button><span>Сторінка {page}</span><button className="secondary-button" onClick={() => fetchPhotos(page + 1)} disabled={!hasNextPage || loading}>Наступна →</button></div>}
             {isUploadOpen && <UploadPhoto onClose={() => setIsUploadOpen(false)} onUploadSuccess={fetchPhotos} />}
+            {lightboxPhoto && <div className="lightbox-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setLightboxPhoto(null)}><section className="lightbox" role="dialog" aria-modal="true" aria-label="Повнорозмірний перегляд фото"><button className="icon-button lightbox-close" type="button" onClick={() => setLightboxPhoto(null)} aria-label="Закрити перегляд">×</button><img src={lightboxPhoto.url} alt={lightboxPhoto.description || 'Повнорозмірна світлина'} /></section></div>}
         </main>
     );
 }
