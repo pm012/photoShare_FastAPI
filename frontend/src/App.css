@@ -402,16 +402,16 @@
 
 .photo-grid { column-count: 3; column-gap: 22px; }
 .photo-card { display: inline-block; width: 100%; overflow: hidden; margin: 0 0 22px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 10px 24px rgba(15, 23, 42, .08); break-inside: avoid; }
-.photo-image-button { display: block; width: 100%; padding: 0; border: 0; cursor: zoom-in; background: #e2e8f0; }
-.photo-image-button img { display: block; width: 100%; height: auto; max-height: 640px; object-fit: contain; }
+.photo-image-button { display: block; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; padding: 0; border: 0; cursor: zoom-in; background: #e2e8f0; }
+.photo-image-button img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
 .photo-card-body { padding: 16px; }
 .photo-author { display: block; padding: 0; margin-bottom: 10px; color: #9e2f24; background: transparent; border: 0; cursor: pointer; font: inherit; font-size: 13px; font-weight: 800; }
 .photo-author:hover { text-decoration: underline; }
 .photo-rating { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: #475569; font-size: 13px; font-weight: 800; }
 .stars { display: inline-flex; gap: 1px; color: #cbd5e1; font-size: 15px; line-height: 1; }
 .stars .star.filled { color: #f97316; }
-.photo-description { min-height: 48px; color: #3e3531; }
-.tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.photo-description { display: -webkit-box; min-height: 4.35em; max-height: 4.35em; overflow: hidden; color: #3e3531; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.tag-list { display: flex; flex-wrap: wrap; align-content: flex-start; height: 50px; overflow: hidden; gap: 6px; margin-top: 14px; }
 .tag { padding: 4px 8px; color: #756b68; background: #f1e8e0; border-radius: 3px; font-size: 12px; }
 .lightbox-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(15, 23, 42, .88); }
 .lightbox { position: relative; max-width: min(1200px, 96vw); max-height: 94vh; }

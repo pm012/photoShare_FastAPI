@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Створюємо ізольований екземпляр axios з базовою адресою нашого FastAPI
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
 });
 
 // Інтерцептор (перехоплювач): перед КОЖНИМ запитом до бекенду

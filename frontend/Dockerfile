@@ -1,19 +1,17 @@
-FROM node:22-alpine
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Копіюємо файли залежностей
 COPY package*.json ./
-
-# Встановлюємо залежності
-RUN npm install
-
-# Копіюємо весь код фронтенду
+RUN npm ci
 COPY . .
+ARG VITE_API_URL=http://localhost:8000/api
+ENV VITE_API_URL=${VITE_API_URL}
+RUN npm run build
 
-# Відкриваємо порт дефолтного сервера Vite
-EXPOSE 5173
+FROM nginx:1.27-alpine
 
-# Запускаємо сервер розробки з прапорцем --host, 
-# щоб Vite приймав запити з-за меж контейнера (з вашого браузера)
-CMD ["npm", "run", "dev", "--", "--host"]
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+EXPOSE 80

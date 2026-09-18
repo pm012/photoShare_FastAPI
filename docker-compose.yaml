@@ -42,11 +42,25 @@ services:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/photoshare_db
       REDIS_HOST: redis
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+      PORT: 8000
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - photoshare_net
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api}
+    ports:
+      - "5173:80"
+    depends_on:
+      - web
     networks:
       - photoshare_net
     restart: always
