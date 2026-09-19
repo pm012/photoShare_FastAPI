@@ -190,6 +190,11 @@
   box-sizing: border-box;
   text-align: left;
 }
+/* Ефект появи напису «Змінити фото» при наведенні на аватар */
+.avatar-container-hover:hover .avatar-overlay {
+    opacity: 1 !important;
+}
+
 
 .app-header { display: flex; align-items: center; gap: 28px; padding: 18px 42px; border-bottom: 1px solid #ded1c7; background: #fffdf9; }
 .brand-button { padding: 0; border: 0; color: #2d2725; background: transparent; cursor: pointer; font: 800 22px/1 var(--sans); letter-spacing: -.8px; }

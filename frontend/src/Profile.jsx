@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from './api';
+import { AvatarUpload } from './AvatarUpload'; // Імпортуємо наш новий компонент
 
 const formatDate = (date) => new Intl.DateTimeFormat('uk-UA', {
     day: 'numeric',
@@ -65,13 +66,25 @@ function Profile() {
         }
     };
 
+    // Оновлення посилання на аватар у внутрішньому стані профілю після завантаження в Cloudinary
+    const handleAvatarUpdated = (newUrl) => {
+        setUser((prevUser) => ({ ...prevUser, avatar_url: newUrl }));
+        setSaveMessage(newUrl ? 'Аватар успішно оновлено.' : 'Аватар успішно видалено.');
+    };
+
     if (loading) return <main className="profile-page"><div className="feed-status" role="status">Завантажуємо профіль...</div></main>;
     if (error && !user) return <main className="profile-page"><p className="error-message" role="alert">{error}</p></main>;
 
     return (
         <main className="profile-page">
             <section className="profile-hero">
-                <div className="profile-avatar" aria-hidden="true">{user.username.slice(0, 1).toUpperCase()}</div>
+                {/* Замінено стару статичну аватарку на інтерактивний завантажувач */}
+                <AvatarUpload 
+                    currentAvatarUrl={user.avatar_url} 
+                    userName={user.username} 
+                    onAvatarUpdated={handleAvatarUpdated} 
+                />
+                
                 <div className="profile-intro">
                     <p className="eyebrow">Your space</p>
                     {isEditing ? (

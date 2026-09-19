@@ -1,16 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from fastapi import Request
 
 from src.database.db import get_db
 from src.database.models import User, UserRole
-from src.schemas.users import UserPublicResponse, UserMeResponse, UserUpdateModel
+from src.schemas.users import UserPublicResponse, UserMeResponse, UserUpdateModel, UserRoleUpdateModel
 from src.schemas.search import PhotoSearchResponse
 from src.repository import users as repository_users
 from src.repository import photos as repository_photos
 from src.services.roles import RoleAccess
 from src.services.limiter import limiter
+# Додаємо імпорт нашого Cloudinary-сервісу збереження аватарів
+from src.services.storage import save_avatar_to_cloudinary, delete_avatar_from_cloudinary
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -42,6 +43,46 @@ def update_current_user_profile(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already exists")
 
 
+@router.post("/me/avatar", response_model=UserMeResponse)
+@limiter.limit("5/minute")  # Захист від спаму завантаженнями
+async def upload_avatar(
+    request: Request,
+    file: UploadFile = File(...),
+    current_user: User = Depends(allowed_all),
+    db: Session = Depends(get_db)
+):
+    # Хмарний сервіс Cloudinary автоматично перезапише старий файл завдяки public_id при повторному POST.
+    # Але якщо ви хочете перестрахуватися і примусово видалити старий public_id:
+    # delete_avatar_from_cloudinary(current_user.id)
+
+    # Завантажуємо зображення у Cloudinary та отримуємо HTTPS URL
+    avatar_url = await save_avatar_to_cloudinary(file, current_user.id)
+    
+    # Оновлюємо поле avatar_url в базі даних для поточного юзера
+    current_user.avatar_url = avatar_url
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.delete("/me/avatar", response_model=UserMeResponse)
+def delete_avatar(
+    current_user: User = Depends(allowed_all),
+    db: Session = Depends(get_db)
+):
+    if not current_user.avatar_url:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Користувач не має аватара.")
+        
+    # Видаляємо фізичний файл з хмари Cloudinary
+    delete_avatar_from_cloudinary(current_user.id)
+    
+    # Обнуляємо лінк у базі даних
+    current_user.avatar_url = None
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
 @router.get("/{username}", response_model=UserPublicResponse)
 def get_user_public_profile(username: str, db: Session = Depends(get_db), current_user: User = Depends(allowed_all)):
     # ТЗ: Публічний профіль за унікальним юзернеймом
@@ -50,7 +91,14 @@ def get_user_public_profile(username: str, db: Session = Depends(get_db), curren
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     
     user, photos_count = profile_data
-    return {"username": user.username, "created_at": user.created_at, "photos_count": photos_count}
+    # Оновлено: додано передачу поля avatar_url в схему UserPublicResponse
+    return {
+        "username": user.username, 
+        "created_at": user.created_at, 
+        "photos_count": photos_count,
+        "avatar_url": user.avatar_url
+    }
+
 
 @router.get("/{username}/photos", response_model=list[PhotoSearchResponse])
 def get_user_public_photos(username: str, db: Session = Depends(get_db), current_user: User = Depends(allowed_all)):
@@ -85,7 +133,6 @@ def ban_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
 
-from src.schemas.users import UserRoleUpdateModel # <-- Додали імпорт нової схеми
 
 @router.patch("/{user_id}/role", response_model=UserMeResponse)
 @limiter.limit("10/minute")
@@ -109,6 +156,7 @@ def change_user_role(
         
     return user
 
+
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
     user_id: int,
@@ -128,6 +176,9 @@ def delete_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to delete this account."
         )
+
+    # Перед видаленням користувача з бази також очищуємо хмару від його аватара
+    delete_avatar_from_cloudinary(user_id)
 
     user = repository_users.delete_user(user_id, db)
     if not user:

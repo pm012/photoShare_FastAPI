@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware  # Використовуємо правильну мідлварь
 from fastapi.responses import PlainTextResponse 
+from fastapi.staticfiles import StaticFiles
 
 from src.routes import auth, photos, transformations, comments, users, ratings, search
 from src.conf.config import settings
