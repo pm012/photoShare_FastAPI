@@ -18,9 +18,9 @@ PhotoShare — це сучасний масштабований REST API зас�
 
 ---
 
-## Швидкий запуск через Docker Compose (В один клік)
+## Швидкий запуск через Docker Compose
 
-Найпростіший спосіб підняти весь проєкт локально разом із базою даних та Redis:
+Compose запускає весь локальний стек: PostgreSQL, Redis, FastAPI API та зібраний React frontend.
 
 1. **Клонуйте репозиторій:**
 
@@ -30,7 +30,7 @@ PhotoShare — це сучасний масштабований REST API зас�
    ```
 
 2. **Налаштуйте змінні оточення:**
-   Створіть у корені файл `.env` та вкажіть ваші діючі ключі Cloudinary, пароль програми для SMTP пошти та інші налаштування:
+   Створіть у корені файл `.env` на основі `env-sample.cfg` та вкажіть діючі ключі Cloudinary, пароль програми для SMTP пошти та інші налаштування:
 
    ```env
    DATABASE_URL=postgresql+psycopg2://postgres:secret_password@localhost:5433/photoshare_db
@@ -38,6 +38,8 @@ PhotoShare — це сучасний масштабований REST API зас�
    ALGORITHM=HS256
    ACCESS_TOKEN_EXPIRE_MINUTES=30
    PUBLIC_API_URL=http://localhost:8000
+   FRONTEND_URL=http://localhost:5173
+   VITE_API_URL=http://localhost:8000/api
    MAX_UPLOAD_SIZE_BYTES=10485760
 
    CLOUDINARY_NAME=your_cloudinary_name
@@ -75,8 +77,11 @@ PhotoShare — це сучасний масштабований REST API зас�
 Для Docker Compose змінна `DATABASE_URL` всередині контейнера формується автоматично
 через сервіс `db`; локальне значення в `.env` використовується лише для запуску поза Docker.
 
-Проєкт буде доступний за адресою: **`http://localhost:8000`**  
+Проєкт буде доступний за адресою: **`http://localhost:5173`**
+API буде доступний за адресою: **`http://localhost:8000`**
 Інтерактивна документація Swagger API: **`http://localhost:8000/docs`**
+
+Для перебудови після змін у frontend або backend використовуйте `docker compose up --build`. Для повного очищення локальної бази даних: `docker compose down -v`.
 
 ---
 
@@ -115,6 +120,55 @@ PhotoShare — це сучасний масштабований REST API зас�
    ```bash
    poetry run python main.py
    ```
+
+5. **Запустіть frontend у режимі розробки:**
+   ```bash
+   cd frontend
+   npm ci
+   npm run dev
+   ```
+
+   За замовчуванням frontend звертається до `http://localhost:8000/api`. Для іншої адреси скопіюйте `frontend/frontend-env-sample.cfg` у `frontend/.env` і змініть значення:
+   ```env
+   VITE_API_URL=https://your-api.example.com/api
+   ```
+
+   Vite автоматично завантажує `frontend/.env`, а змінні з префіксом `VITE_` доступні в коді через `import.meta.env`. Не зберігайте в цьому файлі паролі, токени або приватні ключі: frontend-змінні вбудовуються у JavaScript bundle і доступні користувачу браузера.
+
+---
+
+## Деплой на Render
+
+Рекомендована конфігурація Render складається з двох сервісів:
+
+1. **Backend Web Service**
+   - Repository: цей репозиторій
+   - Environment: `Docker`
+   - Dockerfile Path: `./Dockerfile`
+   - Docker Context: корінь репозиторію
+   - Health Check Path: `/health`
+   - Pre-Deploy Command: `alembic upgrade head`
+
+   Render передає порт у змінній `PORT`; кореневий `Dockerfile` використовує її автоматично.
+
+2. **Frontend Static Site**
+   - Root Directory: `frontend`
+   - Build Command: `npm ci && npm run build`
+   - Publish Directory: `dist`
+   - Rewrite Rule: `/*` -> `/index.html` зі статусом `Rewrite`
+
+   Для frontend Static Site додайте environment variable `VITE_API_URL` зі значенням `https://<backend-service>.onrender.com/api`. Файл `frontend/frontend-env-sample.cfg` потрібен лише як шаблон для локального запуску.
+
+У Backend Web Service додайте environment variables із `env-sample.cfg`. Production-значення мають містити:
+
+- `DATABASE_URL` — Internal Database URL від Render PostgreSQL;
+- `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` — параметри Redis-сервісу;
+- `PUBLIC_API_URL` — публічний URL backend;
+- `FRONTEND_URL` — публічний URL Static Site frontend. Можна вказати кілька origin через кому;
+- `SECRET_KEY`, Cloudinary та SMTP змінні — реальні production secrets;
+- `MAIL_CONFIRMATION_REQUIRED=True`.
+
+Після створення обох сервісів замініть `FRONTEND_URL` на фактичний URL Static Site. Не комітьте `.env` або production secrets у репозиторій.
 
 ---
 

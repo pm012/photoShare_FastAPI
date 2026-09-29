@@ -1,8 +1,12 @@
-# Гіт та документація
+# Git, documentation and local tooling
 .git
 .gitignore
 README.md
 LICENSE
+docs/
+htmlcov/
+tests/
+frontend/
 
 # Локальне віртуальне оточення (найважливіше!)
 .venv
@@ -17,7 +21,7 @@ __pycache__/
 .pytest_cache/
 .cache/
 
-# Локальні секрети
+# Local secrets
 .env
 env-sample.cfg
 

@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     MAIL_SERVER: str
     MAIL_CONFIRMATION_REQUIRED: bool = True # для продакшену увімкнена (вимикається в env файлі)
     PUBLIC_API_URL: str = "http://localhost:8000"
+    FRONTEND_URL: str = "http://localhost:5173"
     MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024
 
     # Гнучка логіка для локального запуску та Docker:

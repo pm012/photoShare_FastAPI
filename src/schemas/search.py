@@ -7,6 +7,7 @@ from src.schemas.photos import TagResponse
 class PhotoSearchResponse(BaseModel):
     id: int
     user_id: int
+    username: str
     url: str
     description: Optional[str] = None
     tags: List[TagResponse] = []

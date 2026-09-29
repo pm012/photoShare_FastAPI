@@ -52,7 +52,7 @@ async def send_reset_password_email(email: EmailStr, username: str, host: str):
     to_encode = {"sub": email, "exp": datetime.now(timezone.utc) + timedelta(hours=1), "scope": "password_reset"}
     token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     
-    reset_url = f"{host}api/auth/reset_password/{token}"
+    reset_url = f"{settings.FRONTEND_URL.rstrip('/')}/?reset_token={token}"
 
     html_content = f"""
     <p>Вітаємо, {username}!</p>
