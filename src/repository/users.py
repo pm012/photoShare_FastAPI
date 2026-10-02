@@ -6,7 +6,7 @@ def get_user_profile_by_username(username: str, db: Session) -> Optional[Tuple[U
     user = db.query(User).filter(User.username == username).first()
     if not user:
         return None
-    # Рахуємо кількість фото користувача
+    # Count number of user's photos
     photos_count = db.query(Photo).filter(Photo.user_id == user.id).count()
     return user, photos_count
 
@@ -30,7 +30,7 @@ def ban_user(user_id: int, ban_status: bool, db: Session) -> Optional[User]:
     return user
 
 def search_users_admin(search_str: str, db: Session, page: int = 1, page_size: int = 20) -> List[User]:
-    # Шукаємо користувачів за частковим збігом в username або email (ігноруючи регістр)
+    # Search users by parital match in username or email (ignoring case)
     users_query = db.query(User)
     if search_str:
         users_query = users_query.filter(

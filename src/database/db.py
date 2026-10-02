@@ -4,12 +4,12 @@ from src.conf.config import settings
 
 SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
-# create_engine створює пулл з'єднань з нашою PostgreSQL
+# create_engine creates pool of connections with Postgres database
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# Dependency для роутів FastAPI (автоматично закриває сесію після запиту)
+# Dependency for FastAPI routes (the session is closed automatically after the query)
 def get_db():
     db = SessionLocal()
     try:

@@ -5,7 +5,7 @@ from pydantic import EmailStr
 
 from src.conf.config import settings
 
-# Налаштування підключення до вашого SMTP-серверу (Gmail/Ukr.net тощо)
+# Configuration for connecting to your SMTP server (Gmail/Ukr.net etc.)
 conf = ConnectionConfig(
     MAIL_USERNAME=settings.MAIL_USERNAME,
     MAIL_PASSWORD=settings.MAIL_PASSWORD,
@@ -18,7 +18,7 @@ conf = ConnectionConfig(
     VALIDATE_CERTS=True
 )
 
-# Створення унікального токена підтвердження пошти на 24 години
+# Creating a unique token for email verification for 24 hours
 def create_email_token(data: dict):
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(hours=24)
@@ -30,44 +30,44 @@ async def send_verification_email(email: EmailStr, username: str, host: str):
     verification_url = f"{host}api/auth/confirmed/{token}"
 
     html_content = f"""
-    <p>Привіт, {username}!</p>
-    <p>Дякуємо за реєстрацію в PhotoShare. Будь ласка, підтвердіть свій email, клікнувши за посиланням нижче:</p>
-    <a href="{verification_url}">Підтвердити реєстрацію</a>
-    <p>Посилання дійсне 24 години.</p>
+    <p>Hello, {username}!</p>
+    <p>Thank you for registering with PhotoShare. Please confirm your email by clicking the link below:</p>
+    <a href="{verification_url}">Confirm Registration</a>
+    <p>This link is valid for 24 hours.</p>
     """
 
     message = MessageSchema(
-        subject="Підтвердження реєстрації PhotoShare",
+        subject="Confirmation of PhotoShare Registration",
         recipients=[email],
         body=html_content,
         subtype=MessageType.html,
-        mail_from=settings.MAIL_FROM # для UKR.NET буде помилка якщо не вказати адресу яка буде співпадати з поштою аккаунта
+        mail_from=settings.MAIL_FROM #  for UKR.NET it will be an error if not specify the address that will match the account email
     )
 
     fm = FastMail(conf)
     await fm.send_message(message)
     
 async def send_reset_password_email(email: EmailStr, username: str, host: str):
-    # Генеруємо токен із scope "password_reset" на 1 годину
+    # Generate token for password reset
     to_encode = {"sub": email, "exp": datetime.now(timezone.utc) + timedelta(hours=1), "scope": "password_reset"}
     token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     
     reset_url = f"{settings.FRONTEND_URL.rstrip('/')}/?reset_token={token}"
 
     html_content = f"""
-    <p>Вітаємо, {username}!</p>
-    <p>Ви запросили відновлення паролю в PhotoShare. Перейдіть за посиланням для встановлення нового паролю:</p>
-    <a href="{reset_url}">Скинути пароль</a>
-    <p>Якщо ви цього не робили, просто ігноруйте цей лист.</p>
+    <p>Greeting, {username}!</p>
+    <p>You have requested a password reset for your PhotoShare account. Please click the link below to set a new password:</p>
+    <a href="{reset_url}">Reset Password</a>
+    <p>If you did not request this, please ignore this email.</p>
     """
     
-    # Параметр mail_from, щоб Ukr.net не видавав помилку 554
+    # Parameter mail_from, to ensure Ukr.net is not returning  554 error
     message = MessageSchema(
-        subject="Відновлення паролю PhotoShare",
+        subject="Password Reset for PhotoShare",
         recipients=[email],
         body=html_content,
         subtype=MessageType.html,
-        mail_from=settings.MAIL_FROM  # для UKR.NET буде помилка якщо не вказати адресу яка буде співпадати з поштою аккаунта
+        mail_from=settings.MAIL_FROM  #  for UKR.NET it will be an error if not specify the address that will match the account email
     )
     
     await FastMail(conf).send_message(message)

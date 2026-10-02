@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from './api';
 
-const getError = (error) => error.response?.data?.detail || 'Не вдалося виконати модераційну дію.';
+const getError = (error) => error.response?.data?.detail || 'Could not complete the moderation action.';
 
 function ModerationPanel() {
     const [query, setQuery] = useState('');
@@ -86,13 +86,13 @@ function ModerationPanel() {
     };
 
     const deleteRating = async (ratingId) => {
-        if (!window.confirm('Видалити цю оцінку?')) return;
+        if (!window.confirm('Delete this rating?')) return;
         try {
             setDeletingId(ratingId);
             setError('');
             await api.delete(`/photos/rate/${ratingId}`);
             setRatings((items) => items.filter((rating) => rating.id !== ratingId));
-            setMessage('Оцінку видалено.');
+            setMessage('Rating deleted.');
         } catch (err) {
             setError(getError(err));
         } finally {
@@ -104,13 +104,13 @@ function ModerationPanel() {
 
     return (
         <main className="moderation-page">
-            <header className="admin-heading"><div><p className="eyebrow">Moderation desk</p><h2>Модерація контенту</h2><p>Перегляд фото користувача та контроль оцінок спільноти.</p></div><span className="role-badge">Moderator tools</span></header>
-            <form className="admin-search" onSubmit={searchUsers}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Знайти автора за username або email" aria-label="Пошук автора" /><button className="primary-button" disabled={loading}>{loading ? 'Шукаємо...' : 'Знайти автора'}</button></form>
+            <header className="admin-heading"><div><p className="eyebrow">Moderation desk</p><h2>Content moderation</h2><p>Browse users' photos and manage community ratings.</p></div><span className="role-badge">Moderator tools</span></header>
+            <form className="admin-search" onSubmit={searchUsers}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a creator by username or email" aria-label="Search creators" /><button className="primary-button" disabled={loading}>{loading ? 'Searching...' : 'Find creator'}</button></form>
             {error && <p className="error-message" role="alert">{error}</p>}
             {message && <p className="success-message" role="status">{message}</p>}
-            <section className="moderation-filters"><label><span>Автор</span><select value={selectedUserId} onChange={(event) => loadPhotos(event.target.value)}><option value="">Оберіть користувача</option>{users.map((user) => <option value={user.id} key={user.id}>@{user.username} · {user.email}</option>)}</select></label><label><span>Світлина</span><select value={selectedPhotoId} onChange={(event) => loadRatings(event.target.value)} disabled={!selectedUserId || loading}><option value="">Оберіть світлину</option>{photos.map((photo) => <option value={photo.id} key={photo.id}>#{photo.id} · {photo.description || 'Без опису'}</option>)}</select></label></section>
-            {selectedPhoto && <section className="moderation-photo"><img src={selectedPhoto.url} alt={selectedPhoto.description || 'Світлина для модерації'} /><div><p className="eyebrow">Selected photo</p><h3>{selectedPhoto.description || 'Світлина без опису'}</h3><span>Середній рейтинг: {selectedPhoto.average_rating?.toFixed(1) || '0.0'}</span></div></section>}
-            <section className="ratings-section"><div className="section-heading"><div><p className="eyebrow">Ratings</p><h3>Оцінки світлини</h3></div><span>{ratings.length} оцінок</span></div>{!selectedPhotoId ? <div className="feed-status">Оберіть автора і світлину, щоб переглянути оцінки.</div> : ratingsLoading ? <div className="feed-status" role="status">Завантажуємо оцінки...</div> : ratings.length === 0 ? <div className="feed-status">Оцінок для цієї світлини немає.</div> : <div className="rating-list">{ratings.map((rating) => <article className="rating-row" key={rating.id}><div><strong>Оцінка {rating.rate}/5</strong><small>Користувач #{rating.user_id}</small></div><button className="danger-button" onClick={() => deleteRating(rating.id)} disabled={deletingId === rating.id}>{deletingId === rating.id ? 'Видаляємо...' : 'Видалити'}</button></article>)}</div>}</section>
+            <section className="moderation-filters"><label><span>Creator</span><select value={selectedUserId} onChange={(event) => loadPhotos(event.target.value)}><option value="">Select a user</option>{users.map((user) => <option value={user.id} key={user.id}>@{user.username} · {user.email}</option>)}</select></label><label><span>Photo</span><select value={selectedPhotoId} onChange={(event) => loadRatings(event.target.value)} disabled={!selectedUserId || loading}><option value="">Select a photo</option>{photos.map((photo) => <option value={photo.id} key={photo.id}>#{photo.id} · {photo.description || 'No description'}</option>)}</select></label></section>
+            {selectedPhoto && <section className="moderation-photo"><img src={selectedPhoto.url} alt={selectedPhoto.description || 'Photo under moderation'} /><div><p className="eyebrow">Selected photo</p><h3>{selectedPhoto.description || 'Photo without a description'}</h3><span>Average rating: {selectedPhoto.average_rating?.toFixed(1) || '0.0'}</span></div></section>}
+            <section className="ratings-section"><div className="section-heading"><div><p className="eyebrow">Ratings</p><h3>Photo ratings</h3></div><span>{ratings.length} ratings</span></div>{!selectedPhotoId ? <div className="feed-status">Select a creator and photo to view ratings.</div> : ratingsLoading ? <div className="feed-status" role="status">Loading ratings...</div> : ratings.length === 0 ? <div className="feed-status">This photo has no ratings.</div> : <div className="rating-list">{ratings.map((rating) => <article className="rating-row" key={rating.id}><div><strong>Rating {rating.rate}/5</strong><small>User #{rating.user_id}</small></div><button className="danger-button" onClick={() => deleteRating(rating.id)} disabled={deletingId === rating.id}>{deletingId === rating.id ? 'Deleting...' : 'Delete'}</button></article>)}</div>}</section>
         </main>
     );
 }

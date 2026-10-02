@@ -3,7 +3,7 @@ from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 from src.schemas.photos import TagResponse
 
-# Схема для повернення світлини з її середнім рейтингом у результатах пошуку
+# Scheme for returning a photo with its average rating in the search results
 class PhotoSearchResponse(BaseModel):
     id: int
     user_id: int
@@ -12,6 +12,5 @@ class PhotoSearchResponse(BaseModel):
     description: Optional[str] = None
     tags: List[TagResponse] = []
     created_at: datetime
-    average_rating: float  # Для наочності при фільтрації за рейтингом (середнє - з плаваючою точкою)
-
+    average_rating: float  # For visualization when filtering by rating (average - with a floating point)
     model_config = ConfigDict(from_attributes=True)

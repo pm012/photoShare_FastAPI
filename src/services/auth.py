@@ -15,13 +15,13 @@ class AuthResultService:
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        # Нативний bcrypt працює з байтами, тому ми конвертуємо рядки в utf-8
+        # Native bcrypt works with bytes, so we convert strings to utf-8
         password_bytes = plain_password.encode('utf-8')
         hashed_bytes = hashed_password.encode('utf-8')
         return bcrypt.checkpw(password_bytes, hashed_bytes)
 
     def get_password_hash(self, password: str) -> str:
-        # Генеруємо сіль та хешуємо пароль, результат декодуємо назад у рядок для збереження в БД
+        # Generating salt and hashing the password, then decoding the result back to a string for storage in the DB
         password_bytes = password.encode('utf-8')
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(password_bytes, salt)

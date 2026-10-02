@@ -11,7 +11,7 @@ VALID_IMAGE_BYTES = base64.b64decode(
 
 @pytest.fixture(autouse=True)
 def mock_cloudinary(monkeypatch):
-    # Створюємо заглушку для Cloudinary, щоб тести не стукали в інтернет
+    # Create stub for Cloudinary, to disallow tests to access internent
     mock_upload = MagicMock(return_value={"secure_url": "https://fake-cloudinary/image.jpg", "public_id": "fake_id"})
     mock_destroy = MagicMock(return_value={"result": "ok"})
     
@@ -20,18 +20,18 @@ def mock_cloudinary(monkeypatch):
     monkeypatch.setattr(cloudinary_service, "get_transformed_url", lambda pid, pr: "https://fake-cloudinary/transformed.jpg")
 
 def get_auth_headers(client, email, password):
-    # Допоміжна функція для швидкого отримання токена авторизації
+    # Helper function for rapid obtaining autorization token
     response = client.post("/api/auth/login", data={"username": email, "password": password})
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
 
 def test_create_and_search_photo(client):
-    # 1. Реєструємо першого адміна та отримуємо заголовки авторизації
+    # 1. Register the first admin and get headers of authorization
     client.post("/api/auth/signup", json={"username": "admin", "email": "admin@example.com", "password": "password123"})
     headers = get_auth_headers(client, "admin@example.com", "password123")
 
-    # 2. Тестуємо завантаження фотографії з описом та тегами
-    # Використовуємо псевдо-файл для імітації завантаження через Form Data
+    # 2. Testing photo loading with description and tags
+    # Use pseudo-file for load simulation using Form Data
     file_data = {"file": ("test.png", VALID_IMAGE_BYTES, "image/png")}
     form_data = {"description": "Amazing summer beach", "tags": "summer, beach, nature"}
     
@@ -41,7 +41,7 @@ def test_create_and_search_photo(client):
     assert photo_data["description"] == "Amazing summer beach"
     assert len(photo_data["tags"]) == 3
 
-    # 3. Тестуємо наш розширений пошук (Блок зі смоук-тестування)
+    # 3. Test extended search (Somke tesing block)
     search_response = client.get("/api/search/photos?keyword=beach&sort_by=date&order=desc", headers=headers)
     assert search_response.status_code == 200
     results = search_response.json()
@@ -74,7 +74,7 @@ def test_create_photo_tags_limit_error(client):
     client.post("/api/auth/signup", json={"username": "admin", "email": "admin@example.com", "password": "password123"})
     headers = get_auth_headers(client, "admin@example.com", "password123")
 
-    # Передаємо більше ніж 5 тегів, система має повернути 400 Bad Request за ТЗ
+    # Send more than 5 tags, system should return 400 Bad Request by BRD
     file_data = {"file": ("test.png", VALID_IMAGE_BYTES, "image/png")}
     form_data = {"description": "Too many tags", "tags": "t1, t2, t3, t4, t5, t6"}
     
@@ -116,12 +116,12 @@ def test_transform_photo_success(client):
     client.post("/api/auth/signup", json={"username": "admin", "email": "admin@example.com", "password": "password123"})
     headers = get_auth_headers(client, "admin@example.com", "password123")
 
-    # Спочатку завантажуємо базове фото
+    # Load basic photo at forst
     file_data = {"file": ("test.png", VALID_IMAGE_BYTES, "image/png")}
     photo_resp = client.post("/api/photos/", headers=headers, files=file_data, data={"description": "Original"})
     photo_id = photo_resp.json()["id"]
 
-    # Викликаємо ендпоінт трансформації та генерації QR-коду
+    # Call enpoint of transformation and generating of QR-code
     response = client.post(f"/api/photos/{photo_id}/transform", headers=headers, json={"preset": "black_white"})
     assert response.status_code == 201
     data = response.json()
@@ -132,18 +132,18 @@ def test_photo_sad_paths_and_transformations(client):
     client.post("/api/auth/signup", json={"username": "photographer", "email": "photo@test.com", "password": "password"})
     headers = get_auth_headers(client, "photo@test.com", "password")
 
-    # PUT /photos/{id} - Оновлення опису неіснуючого фото -> 404
+    # PUT /photos/{id} - Update description of the not existing photo -> 404
     response = client.put("/api/photos/999", headers=headers, json={"description": "New"})
     assert response.status_code == 404
 
-    # GET /photos/{id} - Отримання неіснуючого фото -> 404
+    # GET /photos/{id} - Get not existing photo -> 404
     response = client.get("/api/photos/999", headers=headers)
     assert response.status_code == 404
 
-    # DELETE /photos/{id} - Видалення неіснуючого фото -> 404
+    # DELETE /photos/{id} - Delete not existing photo -> 404
     response = client.delete("/api/photos/999", headers=headers)
     assert response.status_code == 404
 
-    # POST /photos/{id}/transform - Трансформація неіснуючого фото -> 404
+    # POST /photos/{id}/transform - Transformation of not existing photo -> 404
     response = client.post("/api/photos/999/transform", headers=headers, json={"preset": "avatar"})
     assert response.status_code == 404

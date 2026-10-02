@@ -12,7 +12,7 @@ from src.services.roles import RoleAccess
 router = APIRouter(prefix="/photos", tags=["ratings"])
 
 allowed_all = RoleAccess([UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN])
-# Видалення та перегляд усіх оцінок за ТЗ дозволено ТІЛЬКИ Moderator/Admin
+# Deleting and viewing all ratings is allowed only for Moderator/Admin
 allowed_management = RoleAccess([UserRole.MODERATOR, UserRole.ADMIN])
 
 @router.post("/{photo_id}/rate", response_model=RatingResponse, status_code=status.HTTP_201_CREATED)
@@ -22,19 +22,19 @@ def rate_photo(
     current_user: User = Depends(allowed_all),
     db: Session = Depends(get_db)
 ):
-    # 1. Перевіряємо, чи існує світлина
+    # 1. Check if the photo exists
     photo = repository_photos.get_photo_by_id(photo_id, db)
     if not photo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
         
-    # 2. ТЗ: Неможливо оцінювати свої світлини
+    # 2. RD: It's not possible to rate your own photos
     if photo.user_id == current_user.id:
         raise HTTPException(            
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You cannot rate your own photo."
         )
         
-    # 3. Перевіряємо, чи цей користувач вже ставив оцінку (запобігаємо IntegrityError через UniqueConstraint)
+    # 3. Check if the user has already rated the photo (to prevent IntegrityError via UniqueConstraint)
     existing_ratings = repository_ratings.get_ratings_by_photo(photo_id, db)
     for r in existing_ratings:
         if r.user_id == current_user.id:
@@ -48,7 +48,7 @@ def rate_photo(
 
 @router.get("/{photo_id}/rate/summary", response_model=PhotoRatingSummaryResponse)
 def get_photo_rating_summary(photo_id: int, db: Session = Depends(get_db), current_user: User = Depends(allowed_all)):
-    # Отримання середнього рейтингу світлини
+    # Get the average rating of the photo
     photo = repository_photos.get_photo_by_id(photo_id, db)
     if not photo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
@@ -70,7 +70,7 @@ def get_photo_ratings(
 @router.delete("/rate/{rating_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_photo_rating(
     rating_id: int,
-    current_user: User = Depends(allowed_management), # ТІЛЬКИ Moderator/Admin за ТЗ
+    current_user: User = Depends(allowed_management), # ONLY Moderator/Admin per the requirements
     db: Session = Depends(get_db)
 ):
     rating = repository_ratings.get_rating_by_id(rating_id, db)

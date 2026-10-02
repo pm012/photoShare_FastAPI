@@ -8,7 +8,7 @@ class RoleAccess:
         self.allowed_roles = allowed_roles
 
     def __call__(self, current_user: User = Depends(auth_service.get_current_user)):
-        # Якщо роль користувача не входить у список дозволених — повертаємо 403 Forbidden
+        # If the user's role is not in the list of allowed roles — return 403 Forbidden
         if current_user.role not in self.allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

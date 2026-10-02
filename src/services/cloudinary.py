@@ -5,7 +5,7 @@ from src.conf.config import settings
 
 class CloudinaryService:
     def __init__(self):
-        # Ініціалізація Cloudinary з файлу .env через settings
+        # Initialisation of Cloudinary from the .env file via settings
         cloudinary.config(
             cloud_name=settings.CLOUDINARY_NAME,
             api_key=settings.CLOUDINARY_API_KEY,
@@ -14,7 +14,7 @@ class CloudinaryService:
         )
 
     def upload_photo(self, file: UploadFile, username: str) -> dict:
-        # Завантаження фото в оригінальну папку користувача
+        # Uploading photo to the user's original folder
         folder_path = f"PhotoShare/{username}"
         result = cloudinary.uploader.upload(
             file.file, 
@@ -25,12 +25,12 @@ class CloudinaryService:
         return result
 
     def delete_photo(self, public_id: str) -> dict:
-        # Видалення фото з хмари за його public_id
+        # Deleting photo from the cloud by its public_id
         result = cloudinary.uploader.destroy(public_id)
         return result
 
     def get_transformed_url(self, public_id: str, preset: str) -> str:
-        # Набори трансформацій згідно з ТЗ
+        # Sets of transformations according to the requirements
         transformation_options = []
         
         if preset == "avatar":
@@ -42,7 +42,7 @@ class CloudinaryService:
         else:
             transformation_options = [{"width": 800, "crop": "scale"}]
 
-        # Генеруємо посилання з масивом трансформацій
+        # Generating URL with the array of transformations
         url = cloudinary.CloudinaryImage(public_id).build_url(transformation=transformation_options)
         return url
 

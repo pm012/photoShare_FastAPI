@@ -10,7 +10,7 @@ from src.repository import users as repository_users
 from src.repository import photos as repository_photos
 from src.services.roles import RoleAccess
 from src.services.limiter import limiter
-# Додаємо імпорт нашого Cloudinary-сервісу збереження аватарів
+# Add import for Cloudinary service for saving avatars
 from src.services.storage import save_avatar_to_cloudinary, delete_avatar_from_cloudinary
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -20,7 +20,7 @@ allowed_admin = RoleAccess([UserRole.ADMIN])
 
 @router.get("/me", response_model=UserMeResponse)
 def get_current_user_profile(current_user: User = Depends(allowed_all)):
-    # ТЗ: Власний профіль користувача
+    # PRD: Own profile of the user
     return current_user
 
 
@@ -32,7 +32,7 @@ def update_current_user_profile(
     current_user: User = Depends(allowed_all), 
     db: Session = Depends(get_db)
 ):
-    # ТЗ: Редагування власного профілю
+    # PRD: Editing own profile
     existing_user = repository_users.get_user_by_username(body.username, db)
     if existing_user and existing_user.id != current_user.id:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already exists")
@@ -44,21 +44,21 @@ def update_current_user_profile(
 
 
 @router.post("/me/avatar", response_model=UserMeResponse)
-@limiter.limit("5/minute")  # Захист від спаму завантаженнями
+@limiter.limit("5/minute")  # Protection against spam uploads
 async def upload_avatar(
     request: Request,
     file: UploadFile = File(...),
     current_user: User = Depends(allowed_all),
     db: Session = Depends(get_db)
 ):
-    # Хмарний сервіс Cloudinary автоматично перезапише старий файл завдяки public_id при повторному POST.
-    # Але якщо ви хочете перестрахуватися і примусово видалити старий public_id:
+    # Cloud service Cloudinary automatically overwrites the old file due to public_id during a subsequent POST.
+    # But if you want to be extra safe and forcibly delete the old public_id:
     # delete_avatar_from_cloudinary(current_user.id)
 
-    # Завантажуємо зображення у Cloudinary та отримуємо HTTPS URL
+    # Upload the image to Cloudinary and get the HTTPS URL
     avatar_url = await save_avatar_to_cloudinary(file, current_user.id)
     
-    # Оновлюємо поле avatar_url в базі даних для поточного юзера
+    # Update the avatar_url field in the database for the current user
     current_user.avatar_url = avatar_url
     db.commit()
     db.refresh(current_user)
@@ -71,12 +71,12 @@ def delete_avatar(
     db: Session = Depends(get_db)
 ):
     if not current_user.avatar_url:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Користувач не має аватара.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User does not have an avatar.")
         
-    # Видаляємо фізичний файл з хмари Cloudinary
+    # Delete the physical file from the Cloudinary
     delete_avatar_from_cloudinary(current_user.id)
     
-    # Обнуляємо лінк у базі даних
+    # Nullify the link in the database
     current_user.avatar_url = None
     db.commit()
     db.refresh(current_user)
@@ -85,13 +85,13 @@ def delete_avatar(
 
 @router.get("/{username}", response_model=UserPublicResponse)
 def get_user_public_profile(username: str, db: Session = Depends(get_db), current_user: User = Depends(allowed_all)):
-    # ТЗ: Публічний профіль за унікальним юзернеймом
+    # PRD: Public profile by unique username
     profile_data = repository_users.get_user_profile_by_username(username, db)
     if not profile_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     
     user, photos_count = profile_data
-    # Оновлено: додано передачу поля avatar_url в схему UserPublicResponse
+    # Updated: added transfer of avatar_url field to UserPublicResponse schema
     return {
         "username": user.username, 
         "created_at": user.created_at, 
@@ -120,11 +120,11 @@ def get_user_public_photos(username: str, db: Session = Depends(get_db), current
 def ban_user(
     request: Request,
     user_id: int, 
-    is_active: bool = False,  # False — забанити, True — розбанити
-    current_user: User = Depends(allowed_admin),  # ТІЛЬКИ Admin за ТЗ
+    is_active: bool = False,  # False — ban, True — unban
+    current_user: User = Depends(allowed_admin),  # Only Admin can ban users
     db: Session = Depends(get_db)
 ):
-    # Забороняємо адміну банити самого себе
+    # Disallow Admin from banning themselves
     if current_user.id == user_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot ban yourself.")
         
@@ -140,10 +140,10 @@ def change_user_role(
     request: Request,
     user_id: int,
     body: UserRoleUpdateModel,
-    current_user: User = Depends(allowed_admin),  # Тільки Admin може міняти ролі!
+    current_user: User = Depends(allowed_admin),  # Only Admin can change roles!
     db: Session = Depends(get_db)
 ):
-    # Забороняємо адміну змінювати роль самому собі (щоб випадково не заблокувати доступ)
+    # Disallow Admin from changing their own role (to prevent accidentally locking themselves out)
     if current_user.id == user_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
@@ -160,24 +160,24 @@ def change_user_role(
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
     user_id: int,
-    current_user: User = Depends(allowed_all),  # Доступно всім авторизованим, але з логікою всередині
+    current_user: User = Depends(allowed_all),  # Available to all authorized users, but with logic inside
     db: Session = Depends(get_db)
 ):
-    # 1. Захист: Адмін не може видалити самого себе
+    # 1. Protection: Admin cannot delete themselves
     if current_user.role == UserRole.ADMIN and current_user.id == user_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
             detail="You cannot delete your own admin account."
         )
 
-    # 2. Перевірка прав: видалити може або сам власник, або ADMIN
+    # 2. Permission check: can delete either the owner themselves or ADMIN
     if current_user.id != user_id and current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to delete this account."
         )
 
-    # Перед видаленням користувача з бази також очищуємо хмару від його аватара
+    # Before deleting the user from the database, also clear the cloud from their avatar
     delete_avatar_from_cloudinary(user_id)
 
     user = repository_users.delete_user(user_id, db)

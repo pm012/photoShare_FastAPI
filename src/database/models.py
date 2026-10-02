@@ -4,13 +4,13 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, T
 from sqlalchemy.orm import relationship
 from src.database.db import Base
 
-# Перелік ролей для RBAC (Role Based Access Control)
+# List of roles for RBAC (Role Based Access Control)
 class UserRole(str, enum.Enum):
     USER = "user"
     MODERATOR = "moderator"
     ADMIN = "admin"
 
-# Таблиця зв'язку Many-to-Many між Фото та Тегами
+# Table for Many-to-Many relationship between Photos and Tags
 photo_m2m_tag = Table(
     "photo_m2m_tag",
     Base.metadata,

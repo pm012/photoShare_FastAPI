@@ -12,7 +12,7 @@ from src.services.limiter import limiter
 
 app = FastAPI(
     title="PhotoShare API",
-    description="REST API застосунок - аналог Instagram (FastAPI, SQLAlchemy, Alembic)",
+    description="REST API applicatoin - based on Instagram (FastAPI, SQLAlchemy, Alembic)",
     version="1.0.0"
 )
 
@@ -24,13 +24,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Налаштовуємо лімітер всередині FastAPI state
+# Set up limiter inside FastAPI state
 app.state.limiter = limiter
 
-# Підключаємо офіційну мідлварь від slowapi
+# Add official middleware from slowapi
 app.add_middleware(SlowAPIMiddleware)
 
-# Обробник помилки, коли користувач робить забагато запитів
+# Error handler, when the user does to many queries
 @app.exception_handler(RateLimitExceeded)
 def _rate_limit_exceeded_handler(request, exc):
     return PlainTextResponse(

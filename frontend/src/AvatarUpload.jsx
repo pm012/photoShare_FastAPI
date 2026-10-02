@@ -17,12 +17,12 @@ export const AvatarUpload = ({ currentAvatarUrl, userName = "User", onAvatarUpda
     setError(null);
 
     if (!ALLOWED_TYPES.includes(file.type)) {
-      setError("Формат не підтримується. Виберіть PNG, JPG або WEBP.");
+      setError("Unsupported format. Choose PNG, JPG, or WEBP.");
       return;
     }
 
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      setError(`Розмір файлу не повинен перевищувати ${MAX_SIZE_MB}MB.`);
+      setError(`File size must not exceed ${MAX_SIZE_MB} MB.`);
       return;
     }
 
@@ -41,7 +41,7 @@ export const AvatarUpload = ({ currentAvatarUrl, userName = "User", onAvatarUpda
       setPreview(response.data.avatar_url);
       onAvatarUpdated(response.data.avatar_url);
     } catch (err) {
-      setError(err.response?.data?.detail || "Не вдалося завантажити аватар.");
+      setError(err.response?.data?.detail || "Could not upload avatar.");
       setPreview(currentAvatarUrl || null);
     } finally {
       setLoading(false);
@@ -57,7 +57,7 @@ export const AvatarUpload = ({ currentAvatarUrl, userName = "User", onAvatarUpda
       onAvatarUpdated(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
-      setError(err.response?.data?.detail || "Помилка при видаленні аватара");
+      setError(err.response?.data?.detail || "Could not delete avatar.");
     } finally {
       setLoading(false);
     }
@@ -65,7 +65,7 @@ export const AvatarUpload = ({ currentAvatarUrl, userName = "User", onAvatarUpda
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
-      {/* Велика кругла аватарка з ховер-ефектом */}
+      {/* Large avatar with a hover effect. */}
       <div 
         onClick={() => !loading && fileInputRef.current?.click()}
         style={{
@@ -91,7 +91,7 @@ export const AvatarUpload = ({ currentAvatarUrl, userName = "User", onAvatarUpda
           </span>
         )}
 
-        {/* Напівпрозорий оверлей, який з'являється при наведенні мишки */}
+        {/* Show a translucent overlay on hover. */}
         <div style={{
           position: "absolute",
           inset: 0,
@@ -104,11 +104,11 @@ export const AvatarUpload = ({ currentAvatarUrl, userName = "User", onAvatarUpda
           opacity: 0,
           transition: "opacity 0.2s ease",
         }} className="avatar-overlay">
-          {loading ? "..." : "Змінити фото"}
+          {loading ? "..." : "Change photo"}
         </div>
       </div>
 
-      {/* Справжній інпут повністю ховаємо через inline-стиль display: none */}
+      {/* Hide the actual file input with display: none. */}
       <input
         type="file"
         ref={fileInputRef}
@@ -117,7 +117,7 @@ export const AvatarUpload = ({ currentAvatarUrl, userName = "User", onAvatarUpda
         style={{ display: "none" }} 
       />
 
-      {/* Панель керування під аватаркою */}
+      {/* Avatar controls. */}
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
         <button
           type="button"
@@ -126,7 +126,7 @@ export const AvatarUpload = ({ currentAvatarUrl, userName = "User", onAvatarUpda
           className="secondary-button"
           style={{ padding: "4px 12px", fontSize: "12px" }}
         >
-          {preview ? "Оновити" : "Обрати файл"}
+          {preview ? "Update" : "Choose file"}
         </button>
 
         {preview && (
@@ -137,7 +137,7 @@ export const AvatarUpload = ({ currentAvatarUrl, userName = "User", onAvatarUpda
             className="secondary-button"
             style={{ padding: "4px 12px", fontSize: "12px", color: "#ff4d4d", borderColor: "#ff4d4d" }}
           >
-            Видалити
+            Delete
           </button>
         )}
       </div>

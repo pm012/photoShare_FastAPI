@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from './api';
-import { AvatarUpload } from './AvatarUpload'; // Імпортуємо наш новий компонент
+import { AvatarUpload } from './AvatarUpload'; // Import new component
 
 const formatDate = (date) => new Intl.DateTimeFormat('uk-UA', {
     day: 'numeric',
@@ -31,7 +31,7 @@ function Profile() {
             setUsername(profile.username);
             setPhotos(photosResponse.data.filter((photo) => photo.user_id === profile.id));
         } catch (err) {
-            setError(err.response?.data?.detail || 'Не вдалося завантажити профіль.');
+            setError(err.response?.data?.detail || 'Failed to load the profile.');
         } finally {
             setLoading(false);
         }
@@ -46,7 +46,7 @@ function Profile() {
         event.preventDefault();
         const nextUsername = username.trim();
         if (!nextUsername) {
-            setError('Username не може бути порожнім.');
+            setError("Username shouldn't be empty.");
             return;
         }
 
@@ -58,27 +58,27 @@ function Profile() {
             setUser(response.data);
             setUsername(response.data.username);
             setIsEditing(false);
-            setSaveMessage('Username успішно оновлено.');
+            setSaveMessage('Username was successfully updated.');
         } catch (err) {
-            setError(err.response?.data?.detail || 'Не вдалося оновити username.');
+            setError(err.response?.data?.detail || 'Note able to update usernmae.');
         } finally {
             setSaving(false);
         }
     };
 
-    // Оновлення посилання на аватар у внутрішньому стані профілю після завантаження в Cloudinary
+    // Update link to avatar in internal state of the profile after uploading to Cloudinary
     const handleAvatarUpdated = (newUrl) => {
         setUser((prevUser) => ({ ...prevUser, avatar_url: newUrl }));
-        setSaveMessage(newUrl ? 'Аватар успішно оновлено.' : 'Аватар успішно видалено.');
+        setSaveMessage(newUrl ? 'Avatar was successfully updated.' : 'Avatar is successfully deleted.');
     };
 
-    if (loading) return <main className="profile-page"><div className="feed-status" role="status">Завантажуємо профіль...</div></main>;
+    if (loading) return <main className="profile-page"><div className="feed-status" role="status">Loading profile...</div></main>;
     if (error && !user) return <main className="profile-page"><p className="error-message" role="alert">{error}</p></main>;
 
     return (
         <main className="profile-page">
             <section className="profile-hero">
-                {/* Замінено стару статичну аватарку на інтерактивний завантажувач */}
+                {/* Changed old static avatar to interactive loader*/}
                 <AvatarUpload 
                     currentAvatarUrl={user.avatar_url} 
                     userName={user.username} 
@@ -110,8 +110,8 @@ function Profile() {
             </section>
 
             <section className="profile-gallery">
-                <div className="section-heading"><div><p className="eyebrow">Archive</p><h3>Мої світлини</h3></div><span>{photos.length} {photos.length === 1 ? 'світлина' : 'світлин'}</span></div>
-                {photos.length === 0 ? <div className="feed-status">У вас ще немає завантажених світлин.</div> : <div className="profile-photo-grid">{photos.map((photo) => <article className="profile-photo" key={photo.id}><img src={photo.url} alt={photo.description || 'Моя світлина'} /><div><p>{photo.description || 'Без опису'}</p><span>★ {photo.average_rating || '0.0'}</span></div></article>)}</div>}
+                <div className="section-heading"><div><p className="eyebrow">Archive</p><h3>My photos</h3></div><span>{photos.length} {photos.length === 1 ? 'photo' : 'photos'}</span></div>
+                {photos.length === 0 ? <div className="feed-status">You have not loaded any phtotos yet.</div> : <div className="profile-photo-grid">{photos.map((photo) => <article className="profile-photo" key={photo.id}><img src={photo.url} alt={photo.description || 'My photo'} /><div><p>{photo.description || 'No description'}</p><span>★ {photo.average_rating || '0.0'}</span></div></article>)}</div>}
             </section>
         </main>
     );

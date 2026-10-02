@@ -8,12 +8,12 @@ htmlcov/
 tests/
 frontend/
 
-# Локальне віртуальне оточення (найважливіше!)
+# Local virtual environment (the most important!)
 .venv
 venv
 ENV
 
-# Кеш Python та Pytest
+# Cache for Python and Pytest
 __pycache__/
 *.pyc
 *.pyo
@@ -25,6 +25,6 @@ __pycache__/
 .env
 env-sample.cfg
 
-# Локальні бази даних / логи
+# Local databases and logs
 *.db
 *.log

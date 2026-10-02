@@ -43,11 +43,11 @@ def client(db_session, monkeypatch):
 
     app.dependency_overrides[get_db] = override_get_db
     
-    # ВИМИКАЄМО RATE LIMITER ДЛЯ ТЕСТІВ, щоб не було помилок 429
+    # Call RATE LIMITER for tests, to avoid 429 errors
     limiter.enabled = False
     monkeypatch.setattr(settings, "MAIL_CONFIRMATION_REQUIRED", False)
 
-    # МОКАЄМО ВІДПРАВКУ ЛИСТІВ (Заглушка, яка нічого не відправляє і не гальмує тести)
+    # Mock sending emails (Mock, that's not sending anything and not slowing tests)
     async def mock_send_email(email, username, host):
         return None
     monkeypatch.setattr(service_email, "send_verification_email", mock_send_email)
@@ -55,7 +55,7 @@ def client(db_session, monkeypatch):
     monkeypatch.setattr(service_email, "send_reset_password_email", mock_send_email)
     monkeypatch.setattr(auth_route, "send_reset_password_email", mock_send_email)
 
-    # Мокаємо сервіс чорного списку Redis
+    # Mock black-list Redis
     monkeypatch.setattr(blacklist_service, "is_token_blacklisted", lambda token: False)
     monkeypatch.setattr(blacklist_service, "add_to_blacklist", lambda token, ttl: None)
 

@@ -1,68 +1,68 @@
-# Технічне завдання на створення застосунку “PhotoShare” (REST API)
+# PhotoShare Application Requirements (REST API)
 
-Основний функціонал для REST API виконаний на **FastAPI**.
-
----
-
-## Аутентифікація
-1. Створюємо механізм аутентифікації. Використовуємо **JWT токени**.
-2. Користувачі мають три ролі: **Звичайний користувач**, **модератор** та **адміністратор**. Перший користувач в системі завжди адміністратор.
-3. Для реалізації різних рівнів доступу ми можемо використовувати декоратори FastAPI для перевірки токена і ролі користувача.
+The core REST API functionality is implemented with **FastAPI**.
 
 ---
 
-## Робота зі світлинами
-1. Користувачі можуть завантажувати світлини з описом (`POST`).
-2. Користувачі можуть видаляти світлини (`DELETE`).
-3. Користувачі можуть редагувати опис світлини (`PUT`).
-4. Користувачі можуть отримувати світлину за унікальним посиланням (`GET`).
-5. Можливість додавати **до 5 тегів** під світлину. Додавання тегу не обов'язкове при завантаженні світлини.
-6. Теги унікальні для всього застосунку. Тег передається на сервер по імені. Якщо такого тега не існує, то він створюється, якщо існує, то для світлини береться існуючий тег з такою назвою.
-7. Користувачі можуть виконувати базові операції над світлинами, які дозволяє сервіс [Cloudinary Image Transformations](https://cloudinary.com). Можливо вибрати обмежений набір трансформацій над світлинами для свого застосунку з Cloudinary.
-8. Користувачі можуть створювати посилання на трансформоване зображення для перегляду світлини в вигляді URL та QR-code за допомогою бібліотеки [qrcode](https://pypi.org). Операція `POST`, оскільки створюється окреме посилання на трансформоване зображення, яке зберігається в базі даних.
-9. Створені посилання зберігаються на сервері, і через мобільний телефон ми можемо відсканувати QR-code та побачити зображення.
-10. Адміністратори можуть робити всі **CRUD операції** зі світлинами користувачів.
+## Authentication
+1. Implement authentication using **JWT tokens**.
+2. Users have three roles: **regular user**, **moderator**, and **administrator**. The first user in the system is always an administrator.
+3. Different access levels can be implemented with FastAPI dependencies that validate the user's token and role.
 
 ---
 
-## Коментування
-1. Під кожною світлиною є блок з коментарями. Користувачі можуть коментувати світлини один одного.
-2. Користувач може редагувати свій коментар, але **не видаляти**.
-3. Адміністратори та модератори **можуть видаляти** коментарі.
-4. Для коментарів обов'язково зберігати час створення та час редагування коментаря в базі даних. Для реалізації функціональності коментарів використовуємо відношення **"один до багатьох"** між світлинами і коментарями в базі даних. Для тимчасового маркування коментарів використовувати стовпці `created_at` і `updated_at` у таблиці коментарів.
+## Photo Management
+1. Users can upload photos with descriptions (`POST`).
+2. Users can delete photos (`DELETE`).
+3. Users can edit photo descriptions (`PUT`).
+4. Users can retrieve a photo through its unique link (`GET`).
+5. A photo can have **up to 5 tags**. Tags are optional when uploading a photo.
+6. Tags are unique across the application and are submitted by name. If a tag does not exist, it is created; if it does, the existing tag is associated with the photo.
+7. Users can apply basic photo operations supported by [Cloudinary Image Transformations](https://cloudinary.com). The application may choose a limited set of Cloudinary transformations.
+8. Users can create a URL to a transformed image and a QR code for viewing the photo using the [qrcode](https://pypi.org) library. This is a `POST` operation because a separate link to the transformed image is created and stored in the database.
+9. Created links are stored on the server and can be scanned with a mobile phone to view the image.
+10. Administrators can perform all **CRUD operations** on users' photos.
 
 ---
 
-## Додатковий функціонал
-1. Створити маршрут для профіля користувача за його унікальним юзернеймом. Повинна повертатися вся інформація про користувача: ім’я, коли зареєстрований, кількість завантажених фото тощо.
-2. Користувач може редагувати інформацію про себе та бачити інформацію про себе. Це мають бути **різні маршрути** з профілем користувача. Профіль для всіх користувачів, а інформація для себе — це те, що можна редагувати.
-3. Адміністратор може робити користувачів неактивними (**банити**). Неактивні користувачі не можуть заходити в застосунок.
-
-### Додатково по можливості (якщо дозволяє час):
-1. **Механізм виходу (Logout):** Реалізувати механізм виходу користувача з застосунку через logout. Access token повинен бути доданий на час його існування в чорний список.
-2. **Рейтинг:**
-   * Користувачі можуть виставляти рейтинг світлині **від 1 до 5 зірок**. Рейтинг обчислюється як середнє значення оцінок всіх користувачів.
-   * Можна тільки один раз виставляти оцінку світлині для одного користувача.
-   * Неможливо оцінювати свої світлини.
-   * Модератори та адміністратори можуть переглядати та видаляти оцінки користувачів.
-3. **Пошук та фільтрація:**
-   * Користувач може здійснювати пошук світлин за ключовим словом або тегом. Після пошуку користувач може відфільтрувати результати за рейтингом або датою додавання.
-   * Модератори та адміністратори можуть виконувати пошук та фільтрацію за користувачами, які додали світлини.
+## Comments
+1. Each photo has a comments section. Users can comment on one another's photos.
+2. Users can edit their own comments but **cannot delete them**.
+3. Administrators and moderators **can delete** comments.
+4. Comment creation and edit timestamps must be stored in the database. Comments use a **one-to-many** relationship with photos. Store timestamps in the `created_at` and `updated_at` columns of the comments table.
 
 ---
 
-## Після виконання основного функціоналу
-1. Покрити застосунок модульними тестами, добитись покриття **більш ніж на 90%**.
-2. Виконайте деплой застосунку для якогось хмарного сервісу на ваш вибір. Рекомендація: [Koyeb](https://koyeb.com) або [Fly.io](https://fly.io).
+## Additional Functionality
+1. Provide a route for a user's public profile, identified by their unique username. Return the user's information, including their name, registration date, number of uploaded photos, and more.
+2. Users can view and edit their own information. These must be **separate routes** from the public profile route. Public profiles are available to everyone; the user's own information is editable.
+3. Administrators can deactivate (**ban**) users. Inactive users cannot sign in to the application.
+
+### Optional Features (Time Permitting)
+1. **Logout:** Implement a logout mechanism. Add the access token to a blacklist for the remainder of its lifetime.
+2. **Ratings:**
+   * Users can rate a photo from **1 to 5 stars**. The rating is the average of all users' scores.
+   * Each user can rate a photo only once.
+   * Users cannot rate their own photos.
+   * Moderators and administrators can view and delete user ratings.
+3. **Search and filtering:**
+   * Users can search photos by keyword or tag, then filter results by rating or upload date.
+   * Moderators and administrators can search and filter photos by the users who uploaded them.
 
 ---
 
-## Критерії прийому
-1. Web-застосунок реалізований на фреймворку **FastAPI**.
-2. Проєкт має бути збережений в окремому репозиторії та бути загальнодоступним (**GitHub, GitLab або BitBucket**).
-3. Для зберігання інформації про користувачів, світлини та коментарі використовувати **PostgreSQL**. Для взаємодії з базою даних використовувати бібліотеку **SQLAlchemy** (ORM).
-4. Проєкт містить докладну інструкцію щодо встановлення та використання.
-5. Проєкт повністю реалізує вимоги, описані в завданні.
-6. Проєкт має повну **Swagger** документацію.
-7. **Створення Dockerfile:** Розробіть `Dockerfile` для створення образу Docker, який дозволить запускати програму в контейнеризованому середовищі. Dockerfile має включати вибір базового образу, копіювання коду, встановлення залежностей та команду для запуску.
-8. **Використання Docker Compose:** Інтегруйте інструмент Docker Compose для керування проєктом. Створіть файл `docker-compose.yml`, який описує послуги, мережі та томи. Файл повинен дозволяти запускати весь проєкт за допомогою однієї команди `docker-compose up`.
+## After Core Functionality
+1. Cover the application with unit tests and achieve **more than 90%** test coverage.
+2. Deploy the application to a cloud service of your choice. Recommended options: [Koyeb](https://koyeb.com) or [Fly.io](https://fly.io).
+
+---
+
+## Acceptance Criteria
+1. The web application is implemented with **FastAPI**.
+2. The project is stored in a separate, publicly accessible repository (**GitHub, GitLab, or Bitbucket**).
+3. **PostgreSQL** stores users, photos, and comments. Use **SQLAlchemy** (ORM) to interact with the database.
+4. The project includes detailed installation and usage instructions.
+5. The project fully implements the requirements described in this document.
+6. The project provides complete **Swagger** documentation.
+7. **Dockerfile:** Create a `Dockerfile` that builds an image for running the application in a container. It must select a base image, copy the code, install dependencies, and define a startup command.
+8. **Docker Compose:** Integrate Docker Compose to manage the project. Create a `docker-compose.yml` file describing services, networks, and volumes. It must allow the entire project to be started with one `docker-compose up` command.

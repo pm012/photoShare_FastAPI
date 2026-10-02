@@ -18,14 +18,14 @@ class Settings(BaseSettings):
     MAIL_FROM: str
     MAIL_PORT: int = 465
     MAIL_SERVER: str
-    MAIL_CONFIRMATION_REQUIRED: bool = True # для продакшену увімкнена (вимикається в env файлі)
+    MAIL_CONFIRMATION_REQUIRED: bool = True # set to True for production (can be switched off in the  .env file)
     PUBLIC_API_URL: str = "http://localhost:8000"
     FRONTEND_URL: str = "http://localhost:5173"
     MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024
 
-    # Гнучка логіка для локального запуску та Docker:
-    # 1. Якщо ми в Docker, змінна DATABASE_URL вже є в системі, і ми НЕ шукаємо файл .env.
-    # 2. Якщо ми запускаємо локально (pytest/main.py), бази в системі немає, і Pydantic зчитує наш локальний .env.
+    # Agile logic for the local launch and Docker:
+    # 1. If Docker => variable DATABASE_URL has already been provided to the system, and there's no need to search .env file.
+    # 2. If we laucn locally (pytest/main.py), then the database is not in the system and Pydantic reads the local .env.
     model_config = SettingsConfigDict(
         env_file=None if os.environ.get("DATABASE_URL") else ".env",
         env_file_encoding="utf-8",

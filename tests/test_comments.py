@@ -2,33 +2,33 @@ import pytest
 from tests.test_photos import VALID_IMAGE_BYTES, get_auth_headers, mock_cloudinary
 
 def test_comment_lifecycle_and_rbac(client):
-    # 1. Реєструємо та логінимо Адміна (ID 1)
+    # 1. Register and login Admin (ID 1)
     client.post("/api/auth/signup", json={"username": "admin", "email": "admin@example.com", "password": "password123"})
     admin_headers = get_auth_headers(client, "admin@example.com", "password123")
 
-    # 2. Реєструємо та логінимо звичайного Користувача (ID 2)
+    # 2. Register and login user (ID 2)
     client.post("/api/auth/signup", json={"username": "user", "email": "user@example.com", "password": "password123"})
     user_headers = get_auth_headers(client, "user@example.com", "password123")
 
-    # 3. Адмін завантажує фото
+    # 3. Admin loads photo
     file_data = {"file": ("test.png", VALID_IMAGE_BYTES, "image/png")}
     photo_resp = client.post("/api/photos/", headers=admin_headers, files=file_data, data={"description": "Admin Photo"})
     photo_id = photo_resp.json()["id"]
 
-    # 4. Звичайний користувач пише коментар під фото адміна
+    # 4. User comments under admin's photo
     comment_resp = client.post(f"/api/photos/{photo_id}/comments", headers=user_headers, json={"text": "Awesome shot!"})
     assert comment_resp.status_code == 201
     comment_id = comment_resp.json()["id"]
 
-    # 5. Користувач успішно редагує свій коментар
+    # 5. User edits his comment
     edit_resp = client.get(f"/api/photos/{photo_id}/comments", headers=user_headers)
     assert edit_resp.status_code == 200
     
-    # 6. ТЗ: Звичайний користувач намагається видалити коментар -> має отримати 403 Forbidden
+    # 6. BRD: User tries to delete comment -> should get 403 Forbidden
     delete_user_resp = client.delete(f"/api/photos/comments/{comment_id}", headers=user_headers)
     assert delete_user_resp.status_code == 403
 
-    # 7. ТЗ: Адмін успішно видаляє коментар іншого користувача -> код 24
+    # 7. BRD: Admin successfully deletes comment and another user -> code 204
     delete_admin_resp = client.delete(f"/api/photos/comments/{comment_id}", headers=admin_headers)
     assert delete_admin_resp.status_code == 204
     
@@ -36,14 +36,14 @@ def test_comment_sad_paths(client):
     client.post("/api/auth/signup", json={"username": "moder", "email": "mod@test.com", "password": "password"})
     headers = get_auth_headers(client, "mod@test.com", "password")
 
-    # PUT /photos/comments/{id} - Редагування неіснуючого коментаря -> 404
+    # PUT /photos/comments/{id} - Edit not existing comment -> 404
     response = client.put("/api/photos/comments/999", headers=headers, json={"text": "New Text"})
     assert response.status_code == 404
 
-    # DELETE /photos/comments/{id} - Видалення неіснуючого коментаря -> 404
+    # DELETE /photos/comments/{id} - Delete non existing comment -> 404
     response = client.delete("/api/photos/comments/999", headers=headers)
     assert response.status_code == 404
 
-    # GET /api/photos/{id}/comments - Отримання коментарів для неіснуючого фото -> 404
+    # GET /api/photos/{id}/comments - Get comments for not existing photo -> 404
     response = client.get("/api/photos/999/comments", headers=headers)
     assert response.status_code == 404

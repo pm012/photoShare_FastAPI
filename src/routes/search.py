@@ -21,14 +21,14 @@ allowed_management = RoleAccess([UserRole.MODERATOR, UserRole.ADMIN])
 @limiter.limit("15/minute")
 def search_photos(
     request: Request,
-    keyword: Optional[str] = Query(None, description="Ключове слово для пошуку в описі світлини"),
-    tag: Optional[str] = Query(None, description="Назва тегу для пошуку"),
-    sort_by: str = Query("date", enum=["date", "rating"], description="Поле сортування: за датою або рейтингом"),
-    order: str = Query("desc", enum=["asc", "desc"], description="Напрямок сортування: asc (за зростанням) або desc (за спаданням)"), # Paremeter for sorting method (asc or desc)
-    user_id: Optional[int] = Query(None, description="ID автора; доступно модераторам та адміністраторам"),
-    page: int = Query(1, ge=1, description="Номер сторінки"),
-    page_size: int = Query(20, ge=1, le=100, description="Кількість фото на сторінці"),
-    min_rating: Optional[float] = Query(None, ge=0, le=5, description="Мінімальний середній рейтинг"),
+    keyword: Optional[str] = Query(None, description="Keyword for searching in photo descriptions"),
+    tag: Optional[str] = Query(None, description="Tag name for searching"),
+    sort_by: str = Query("date", enum=["date", "rating"], description="Sorting field: by date or rating"),
+    order: str = Query("desc", enum=["asc", "desc"], description="Sorting direction: asc (ascending) or desc (descending)"), # Parameter for sorting method (asc or desc)
+    user_id: Optional[int] = Query(None, description="Author ID; available to moderators and administrators"),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Number of photos per page"),
+    min_rating: Optional[float] = Query(None, ge=0, le=5, description="Minimum average rating for filtering photos"),
     current_user: User = Depends(allowed_all),
     db: Session = Depends(get_db)
 ):
@@ -37,7 +37,7 @@ def search_photos(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only moderators and administrators can filter by user.",
         )
-    # Передаємо новий параметр order у репозиторій
+    # Pass the new order parameter to the repository
     return repository_photos.search_photos(
         query_str=keyword, 
         tag_name=tag, 
@@ -52,13 +52,13 @@ def search_photos(
 
 @router.get("/users", response_model=List[UserMeResponse])
 def search_users_for_admin(
-    query: Optional[str] = Query(None, min_length=1, description="Ім'я або Email користувача"),
-    page: int = Query(1, ge=1, description="Номер сторінки"),
-    page_size: int = Query(20, ge=1, le=100, description="Кількість користувачів на сторінці"),
+    query: Optional[str] = Query(None, min_length=1, description="Name or Email of the user"),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Number of users per page"),
     current_user: User = Depends(allowed_management),  # PRD requirement: only  Moderator/Admin can see other users
     db: Session = Depends(get_db)
 ):
-    # Адмінський пошук користувачів за ТЗ
+    # Admin search for users by PRD requirements
     return repository_users.search_users_admin(
         search_str=query or "",
         db=db,

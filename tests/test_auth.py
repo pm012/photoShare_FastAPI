@@ -3,7 +3,7 @@ from src.database.models import User
 from src.conf.config import settings
 
 def test_signup_first_user_as_admin(client):
-    # Тест: Перший зареєстрований — admin
+    # Test: The first who registered - admin
     response = client.post(
         "/api/auth/signup",
         json={
@@ -17,13 +17,13 @@ def test_signup_first_user_as_admin(client):
 
 
 def test_signup_second_user_as_user(client):
-    # Спочатку створюємо першого (він забере роль admin)
+    # At first create the first (he will obtain admin role)
     client.post(
         "/api/auth/signup",
         json={"username": "first_admin", "email": "admin@test.com", "password": "password123"}
     )
     
-    # Тепер створюємо другого — він зобов'язаний стати user
+    # Now signup second -  he should become user
     response = client.post(
         "/api/auth/signup",
         json={
@@ -37,7 +37,7 @@ def test_signup_second_user_as_user(client):
 
 
 def test_login_success(client):
-    # Оскільки БД порожня, спочатку реєструємо акаунт для входу
+    # As BD is empty, register account to enter at first
     client.post(
         "/api/auth/signup",
         json={
@@ -47,7 +47,7 @@ def test_login_success(client):
         }
     )
     
-    # Тепер логінимося в нього
+    # Login to the created above account
     response = client.post(
         "/api/auth/login",
         data={
@@ -96,10 +96,10 @@ def test_confirm_email_invalid_token(client):
     assert response.json()["detail"] == "Invalid or expired verification token"
 
 def test_confirm_email_already_confirmed(client):
-    # Створюємо користувача
+    # Create user
     client.post("/api/auth/signup", json={"username": "confirmed_user", "email": "conf@test.com", "password": "password"})
     
-    # Генеруємо токен
+    # Generateing token 
     to_encode = {"sub": "conf@test.com", "scope": "email_verification"}
     token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     
@@ -109,7 +109,7 @@ def test_confirm_email_already_confirmed(client):
 
 
 def test_reset_password_invalid_scope(client):
-    # Токен має неправильний scope
+    # Token has incorrect scope
     to_encode = {"sub": "admin@test.com", "scope": "wrong_scope"}
     token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     

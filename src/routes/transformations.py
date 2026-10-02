@@ -25,19 +25,19 @@ def transform_photo(
     current_user: User = Depends(allowed_all),
     db: Session = Depends(get_db)
 ):
-    # 1. Перевіряємо, чи існує оригінальне фото
+    # 1. Check if the original photo exists
     photo = repository_photos.get_photo_by_id(photo_id, db)
     if not photo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
 
-    # Перевіряємо пресети за ТЗ ("avatar", "black_white", "thumbnail")
+    # Check the presets according to the requirements ("avatar", "black_white", "thumbnail")
     if body.preset not in ["avatar", "black_white", "thumbnail"]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid preset name")
 
-    # 2. Генеруємо трансформований URL через Cloudinary
+    # 2. Generate the transformed URL through Cloudinary
     transformed_url = cloudinary_service.get_transformed_url(photo.public_id, body.preset)
 
-    # 3. Генеруємо QR-код, який веде на цей URL, та заливаємо його на Cloudinary
+    # 3. Generate the QR-code that leads to this URL, and upload it to Cloudinary
     try:
         qr_code_url = generate_qr_code_url(transformed_url, current_user.username, photo.id)
     except Exception as e:
@@ -46,7 +46,7 @@ def transform_photo(
             detail=f"QR-code generation error: {str(e)}"
         )
 
-    # 4. Записуємо трансформацію в БД
+    # 4. Write the transformation to the DB
     transformation = repository_transformations.create_transformation(
         photo_id=photo.id,
         transformed_url=transformed_url,

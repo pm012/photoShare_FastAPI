@@ -16,8 +16,8 @@ from src.conf.config import settings
 
 router = APIRouter(prefix="/photos", tags=["photos"])
 
-# Права доступу: завантажувати, читати, редагувати та видаляти можуть усі авторизовані користувачі,
-# але всередині репозиторію стоїть блок — едіт/видалення тільки для власника або Admin.
+# Access permissions: upload, read, edit, and delete can be done by all authorized users,
+# but within the repository there is a block — edit/delete only for the owner or Admin.
 allowed_all = RoleAccess([UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN])
 
 @router.post("/", response_model=PhotoResponse, status_code=status.HTTP_201_CREATED)
@@ -26,11 +26,11 @@ async def upload_photo(
     request: Request,
     file: UploadFile = File(...),
     description: Optional[str] = Form(None),
-    tags: Optional[str] = Form(None),  # Передаємо списком через кому за ТЗ (наприклад: "nature, sunset, sea")
+    tags: Optional[str] = Form(None),  # Pass tags as a comma-separated list according to the requirements (e.g., "nature, sunset, sea")
     current_user: User = Depends(allowed_all),
     db: Session = Depends(get_db)
 ):
-    # Валідація типу файлу (захист від завантаження шкідливих скриптів)
+    # Validate file type (protection from uploading malicious scripts)
     allowed_types = {"JPEG": {"image/jpeg", "image/jpg"}, "PNG": {"image/png"}, "WEBP": {"image/webp"}}
     if file.content_type not in {"image/jpeg", "image/png", "image/jpg", "image/webp"}:
         raise HTTPException(
@@ -59,7 +59,7 @@ async def upload_photo(
     finally:
         file.file.seek(0)
 
-    # 1. Завантажуємо файл у Cloudinary
+    # 1. Upload the file to Cloudinary
     try:
         cloudinary_result = cloudinary_service.upload_photo(file, current_user.username)
     except Exception as e:
@@ -68,12 +68,12 @@ async def upload_photo(
             detail=f"Cloudinary upload error: {str(e)}"
         )
 
-    # 2. Парсимо теги з рядка, розділеного комами
+    # 2. Parse tags from the comma-separated string
     tags_list = []
     if tags:
         tags_list = [t.strip() for t in tags.split(",") if t.strip()]
 
-    # 3. Зберігаємо посилання та метадані у базу даних
+    # 3. Save the link and metadata to the database
     photo = repository_photos.create_photo(
         user_id=current_user.id,
         url=cloudinary_result.get("secure_url"),
@@ -110,14 +110,14 @@ def update_photo_description(
 
 @router.delete("/{photo_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_photo(photo_id: int, current_user: User = Depends(allowed_all), db: Session = Depends(get_db)):
-    # Спочатку дізнаємося public_id з бази, щоб видалити файл і з хмари також
+    # At first we need to get the public_id from the database to delete the file from the cloud as well
     photo = repository_photos.get_photo_by_id(photo_id, db)
     if not photo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
     
-    # Видаляємо з бази (всередині стоїть перевірка прав власник/адмін)
+    # Delete from the database (there is a check for owner/admin rights inside)
     repository_photos.delete_photo(photo_id, current_user, db)
     
-    # Видаляємо фізичний файл з Cloudinary хмари
+    # Delete the physical file from the Cloudinary cloud
     cloudinary_service.delete_photo(photo.public_id)
     return None

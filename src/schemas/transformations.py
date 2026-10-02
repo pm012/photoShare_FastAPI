@@ -1,12 +1,12 @@
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
-# Схема для вхідних даних (вибір пресету трансформації)
+# Scheme for input data (selecting a transformation preset)
 class TransformationCreate(BaseModel):
-    # Очікуємо один з варіантів: "avatar", "black_white", "thumbnail"
+    # We expect one of the following options: "avatar", "black_white", "thumbnail"
     preset: str 
 
-# Схема для повернення результату користувачу (Response)
+# Scheme for returning the result to the user (Response)
 class TransformationResponse(BaseModel):
     id: int
     photo_id: int
@@ -14,5 +14,5 @@ class TransformationResponse(BaseModel):
     qr_code_url: str
     created_at: datetime
 
-    # Вмикаємо сумісність з SQLAlchemy ORM моделями для Pydantic v2
+    # Enabling compatibility with SQLAlchemy ORM models for Pydantic v2
     model_config = ConfigDict(from_attributes=True)

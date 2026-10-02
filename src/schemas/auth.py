@@ -2,13 +2,13 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from src.database.models import UserRole
 
-# Схема для реєстрації нового користувача
+# Scheme for registering a new user
 class UserModel(BaseModel):
     username: str = Field(min_length=3, max_length=50)
     email: EmailStr
     password: str = Field(min_length=6, max_length=100)
 
-# Схема для повернення даних користувача (Response)
+# Scheme for returning user data (Response)
 class UserDb(BaseModel):
     id: int
     username: str
@@ -17,10 +17,10 @@ class UserDb(BaseModel):
     is_active: bool
     created_at: datetime
 
-    # Для сумісності з SQLAlchemy ORM моделями в Pydantic v2
+    # For compatibility with SQLAlchemy ORM models in Pydantic v2
     model_config = ConfigDict(from_attributes=True)
 
-# Схема для JWT токена відповіді при логіні
+# Scheme for JWT token response during login
 class TokenModel(BaseModel):
     access_token: str
     token_type: str = "bearer"

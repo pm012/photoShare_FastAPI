@@ -3,16 +3,16 @@ from pydantic import BaseModel, ConfigDict, EmailStr
 from src.database.models import UserRole
 from typing import Optional
 
-# Публічний профіль користувача (доступний усім)
+# Scheme for public user profile (accessible to everyone)
 class UserPublicResponse(BaseModel):
     username: str
     created_at: datetime
     avatar_url: Optional[str] = None
-    photos_count: int  # ТЗ: Кількість завантажених фото
+    photos_count: int  # Requirements: Number of uploaded photos
 
     model_config = ConfigDict(from_attributes=True)
 
-# Детальний власний профіль
+# Detailed user profile
 class UserMeResponse(BaseModel):
     id: int
     username: str
@@ -24,11 +24,11 @@ class UserMeResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-# Схема для редагування власного профілю
+# Scheme for editing the user's own profile
 class UserUpdateModel(BaseModel):
     username: str
     avatar_url: Optional[str] = None
 
-# Схема для редагування ролі не адміна адміном
+# Scheme for editing the role of a non-admin user by an admin
 class UserRoleUpdateModel(BaseModel):
     role: UserRole

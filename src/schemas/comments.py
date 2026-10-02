@@ -1,11 +1,11 @@
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
-# Схема для створення або редагування коментаря
+#   Scheme for creating or editing a comment
 class CommentModel(BaseModel):
     text: str = Field(min_length=1, max_length=500)
 
-# Схема для відповіді сервера (Response)
+# Scheme for server response (Response)
 class CommentResponse(BaseModel):
     id: int
     photo_id: int

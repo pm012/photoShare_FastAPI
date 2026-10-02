@@ -36,7 +36,7 @@ async def signup(body: UserModel, request: Request, db: Session = Depends(get_db
         db.rollback()
         raise HTTPException(status_code=409, detail="Account already exists")
     
-    # Надсилаємо лист ТІЛЬКИ якщо верифікація увімкнена в налаштуваннях
+    # Send verification email ONLY if verification is required in settings
     if settings.MAIL_CONFIRMATION_REQUIRED:
         try:
             await send_verification_email(
@@ -45,7 +45,7 @@ async def signup(body: UserModel, request: Request, db: Session = Depends(get_db
                 f"{settings.PUBLIC_API_URL.rstrip('/')}/",
             )
         except Exception as e:
-            # Якщо пошта впала, ми не ламаємо реєстрацію, а просто логуємо помилку
+            # If email sending fails, we don't break the registration, but just log the error
             print(f"Email sending failed: {e}")
             
     return new_user
@@ -54,7 +54,7 @@ async def signup(body: UserModel, request: Request, db: Session = Depends(get_db
 @router.post("/login", response_model=TokenModel)
 @limiter.limit("5/minute")
 def login(request: Request, body: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    # Шукаємо користувача за email (у Swagger форму логіну поле називається username, але ми туди очікуємо email)
+    # Looking for user by email (in Swagger login form field is named username, but we expect email)
     user = repository_auth.get_user_by_email(body.username, db)
     if user is None:
         raise HTTPException(
@@ -62,7 +62,7 @@ def login(request: Request, body: OAuth2PasswordRequestForm = Depends(), db: Ses
             detail="Invalid email or password"
         )
     
-    # Перевіряємо, чи не забанений користувач за ТЗ
+    # Check if the user is banned (as per the requirements)
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -74,7 +74,7 @@ def login(request: Request, body: OAuth2PasswordRequestForm = Depends(), db: Ses
             detail="Email address is not confirmed",
         )
         
-    # Перевіряємо відповідність хешу пароля
+    # Check the password hash
     if not auth_service.verify_password(body.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, 
@@ -82,7 +82,7 @@ def login(request: Request, body: OAuth2PasswordRequestForm = Depends(), db: Ses
         )      
 
     
-    # Генеруємо JWT токен доступу
+    # Generate JWT access token
     access_token = auth_service.create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -99,11 +99,11 @@ def refresh_access_token(
 def logout(token: str = Depends(oauth2_scheme), current_user: User = Depends(auth_service.get_current_user),
     db: Session = Depends(get_db)):
     
-    # Визначаємо час життя токена (беремо дефолтне значення з конфігурації за ТЗ)
-    # Для більшої точності можна розпарсити exp з токена, але за умовою TTL = час до експірації
+    # Determine the lifetime of the token (taking the default value from the configuration according to the requirements)
+    # For greater accuracy, you can parse the exp from the token, but according to the requirement TTL = time until expiration
     expire_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     
-    # Додаємо токен у чорний список
+    # Add the token to the blacklist
     blacklist_service.add_to_blacklist(token, expire_seconds)
     
     return {"message": "You have successfully logged out."}
@@ -120,7 +120,7 @@ async def request_password_reset(body: RequestEmail, request: Request, db: Sessi
             user.username,
             f"{settings.PUBLIC_API_URL.rstrip('/')}/",
         )
-    # Заради безпеки (захист від сканування імейлів) завжди повертаємо успіх
+    # For security reasons (protection from email enumeration) always return success
     return {"message": "If the email exists, a reset link has been sent."}
 
 
@@ -145,7 +145,7 @@ def reset_password(token: str, body: ResetPasswordModel, db: Session = Depends(g
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Хешуємо та перезаписуємо новий пароль нативним bcrypt
+    # Hashing and overwriting the new password with native bcrypt
     user.hashed_password = auth_service.get_password_hash(body.password)
     db.commit()
     expires_in = max(
@@ -158,7 +158,7 @@ def reset_password(token: str, body: ResetPasswordModel, db: Session = Depends(g
 @router.get("/confirmed/{token}")
 def confirm_email(token: str, db: Session = Depends(get_db)):
     try:
-        # Розшифровуємо токен та перевіряємо його призначення
+        # Decoding the token and checking its purpose
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         if payload.get("scope") != "email_verification":
             raise HTTPException(status_code=400, detail="Invalid token scope")
@@ -166,7 +166,7 @@ def confirm_email(token: str, db: Session = Depends(get_db)):
     except jwt.PyJWTError:
         raise HTTPException(status_code=400, detail="Invalid or expired verification token")
 
-    # Шукаємо користувача в базі за email
+    # Looking for the user in the database by email
     user = repository_auth.get_user_by_email(email, db)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -174,7 +174,7 @@ def confirm_email(token: str, db: Session = Depends(get_db)):
     if user.is_confirmed:
         return {"message": "Your email is already confirmed."}
     
-    # Активуємо статус верифікації
+    # Activating the verification status
     user.is_confirmed = True
     db.commit()
     return {"message": "Email successfully confirmed! You can now log in."}

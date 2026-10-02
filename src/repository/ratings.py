@@ -20,15 +20,15 @@ def get_rating_by_id(rating_id: int, db: Session) -> Optional[Rating]:
 def get_ratings_by_photo(photo_id: int, db: Session) -> List[Rating]:
     return db.query(Rating).filter(Rating.photo_id == photo_id).all()
 
-# Обчислення середньої оцінки за ТЗ
+# Calculation of average mark (BRD)
 def get_average_rating(photo_id: int, db: Session) -> dict:
-    # Робимо запит, який рахує середнє (avg) та кількість (count)
+    # Query that counts average (avg) and amount (count)
     result = db.query(
         func.avg(Rating.rate).label("average"),
         func.count(Rating.id).label("total")
     ).filter(Rating.photo_id == photo_id).first()
     
-    # Якщо оцінок немає, повертаємо 0.0
+    # If there's no ratings return 0.0
     avg_rate = round(result.average, 2) if result.average else 0.0
     total_votes = result.total if result.total else 0
     

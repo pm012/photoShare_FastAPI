@@ -2,7 +2,7 @@ import { useState } from 'react';
 import api from './api';
 
 function Login({ onLoginSuccess }) {
-    // Створюємо пам'ять (стан) для полів вводу
+    // Track the values entered in the form.
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');
@@ -21,7 +21,7 @@ function Login({ onLoginSuccess }) {
         if (Array.isArray(detail)) {
             return detail.map((item) => item.msg).join(' ');
         }
-        return detail || 'Щось пішло не так. Спробуйте пізніше.';
+        return detail || 'Something went wrong. Please try again later.';
     };
 
     const switchMode = (mode) => {
@@ -38,12 +38,12 @@ function Login({ onLoginSuccess }) {
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault(); // Зупиняємо стандартне перезавантаження сторінки браузером
+        e.preventDefault(); // Prevent the browser's default form submission.
         setError('');
         setSuccessMessage('');
 
         if ((isSignup || isResetPassword) && password !== confirmPassword) {
-            setError('Паролі не збігаються.');
+            setError('Passwords do not match.');
             return;
         }
 
@@ -56,14 +56,14 @@ function Login({ onLoginSuccess }) {
                 setUsername('');
                 setPassword('');
                 setConfirmPassword('');
-                setSuccessMessage('Реєстрацію завершено. Тепер увійдіть у свій акаунт.');
+                setSuccessMessage('Registration complete. You can now sign in.');
             } else if (isForgotPassword) {
                 await api.post('/auth/request_password_reset', { email });
-                setSuccessMessage('Якщо акаунт із цим email існує, посилання для відновлення вже надіслано.');
+                setSuccessMessage('If an account with this email exists, a recovery link has been sent.');
             } else if (isResetPassword) {
                 await api.post(`/auth/reset_password/${resetToken}`, { password });
                 switchMode('login');
-                setSuccessMessage('Пароль оновлено. Тепер увійдіть із новим паролем.');
+                setSuccessMessage('Password updated. Sign in with your new password.');
             } else {
                 const formData = new URLSearchParams();
                 formData.append('username', email);
@@ -82,12 +82,12 @@ function Login({ onLoginSuccess }) {
     };
 
     const title = isSignup
-        ? 'Реєстрація у PhotoShare'
+        ? 'Create a PhotoShare account'
         : isForgotPassword
-            ? 'Відновлення паролю'
+            ? 'Password recovery'
             : isResetPassword
-                ? 'Новий пароль'
-                : 'Вхід у PhotoShare';
+                ? 'Set a new password'
+                : 'Sign in to PhotoShare';
 
     return (
         <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
@@ -107,14 +107,14 @@ function Login({ onLoginSuccess }) {
                     <input
                         type="email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)} // Записуємо текст у стайт при введенні
+                        onChange={(e) => setEmail(e.target.value)} // Update the state as the user types.
                         required
                         style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
                     />
                 </div>}
 
                 {!isForgotPassword && <div style={{ marginBottom: '15px' }}>
-                    <label style={{ display: 'block', marginBottom: '5px' }}>{isResetPassword ? 'Новий пароль:' : 'Пароль:'}</label>
+                    <label style={{ display: 'block', marginBottom: '5px' }}>{isResetPassword ? 'New password:' : 'Password:'}</label>
                     <input
                         type="password"
                         value={password}
@@ -126,21 +126,21 @@ function Login({ onLoginSuccess }) {
                 </div>}
 
                 {(isSignup || isResetPassword) && <div style={{ marginBottom: '15px' }}>
-                    <label style={{ display: 'block', marginBottom: '5px' }}>Підтвердження пароля:</label>
+                    <label style={{ display: 'block', marginBottom: '5px' }}>Confirm password:</label>
                     <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} minLength={6} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} />
                 </div>}
 
                 <button type="submit" disabled={loading} style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: loading ? 'wait' : 'pointer' }}>
-                    {loading ? 'Зачекайте...' : isSignup ? 'Зареєструватися' : isForgotPassword ? 'Надіслати посилання' : isResetPassword ? 'Зберегти пароль' : 'Увійти'}
+                    {loading ? 'Please wait...' : isSignup ? 'Create account' : isForgotPassword ? 'Send recovery link' : isResetPassword ? 'Save password' : 'Sign in'}
                 </button>
             </form>
 
             {!isResetPassword && <div style={{ marginTop: '16px', display: 'grid', gap: '8px', textAlign: 'center' }}>
                 {!isForgotPassword && <button type="button" onClick={() => switchMode(isSignup ? 'login' : 'signup')} style={{ border: 'none', background: 'none', color: '#007bff', cursor: 'pointer' }}>
-                    {isSignup ? 'Вже маєте акаунт? Увійти' : 'Немає акаунту? Зареєструватися'}
+                    {isSignup ? 'Already have an account? Sign in' : 'New to PhotoShare? Create an account'}
                 </button>}
                 {!isSignup && <button type="button" onClick={() => switchMode(isForgotPassword ? 'login' : 'forgot')} style={{ border: 'none', background: 'none', color: '#007bff', cursor: 'pointer' }}>
-                    {isForgotPassword ? 'Повернутися до входу' : 'Забули пароль?'}
+                    {isForgotPassword ? 'Back to sign in' : 'Forgot password?'}
                 </button>}
             </div>}
         </div>

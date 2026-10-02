@@ -14,9 +14,9 @@ from src.services.limiter import limiter
 
 router = APIRouter(prefix="/photos", tags=["comments"])
 
-# Дозволяємо базові операції всім ролям
+# Allow basic operations to all roles
 allowed_all = RoleAccess([UserRole.USER, UserRole.MODERATOR, UserRole.ADMIN])
-# Видалення коментарів за ТЗ дозволено ТІЛЬКИ Модераторам та Адмінам
+# Deletion of comments is allowed ONLY to Moderators and Admins
 allowed_delete = RoleAccess([UserRole.MODERATOR, UserRole.ADMIN])
 
 @router.post("/{photo_id}/comments", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
@@ -28,7 +28,7 @@ def create_comment(
     current_user: User = Depends(allowed_all),
     db: Session = Depends(get_db)
 ):
-    # Перевіряємо, чи існує світлина, яку хочемо прокоментувати
+    # Check if the photo exists
     photo = repository_photos.get_photo_by_id(photo_id, db)
     if not photo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
@@ -58,7 +58,7 @@ def update_comment(
     if not comment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
         
-    # ТЗ: Користувач може редагувати свій коментар, а Адмін чи Модератор — будь-який
+    # BRD: User can edit their own comment, and Admin or Moderator can edit any comment
     if comment.user_id != current_user.id and current_user.role not in [UserRole.MODERATOR, UserRole.ADMIN]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -71,7 +71,7 @@ def update_comment(
 @router.delete("/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_comment(
     comment_id: int,
-    current_user: User = Depends(allowed_delete),  # Сюди потраплять тільки Moderator/Admin
+    current_user: User = Depends(allowed_delete),  # Here are placed only Moderator/Admin
     db: Session = Depends(get_db)
 ):
     comment = repository_comments.get_comment_by_id(comment_id, db)

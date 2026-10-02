@@ -99,7 +99,7 @@ function App() {
     try {
       await api.post('/auth/logout');
     } catch {
-      // Локальну сесію все одно потрібно завершити, якщо API недоступний.
+      // Always end the local session, even if the API is unavailable.
     } finally {
       localStorage.removeItem('token');
       setIsAuthenticated(false);
@@ -117,13 +117,13 @@ function App() {
         <div>
           <div className="app-header">
             <button className="brand-button" onClick={() => { setSelectedPhotoId(null); setSelectedUsername(null); setActiveView('feed'); }}>PhotoShare</button>
-            <nav className="main-nav" aria-label="Основна навігація">
-              <button className={activeView === 'feed' ? 'nav-button active' : 'nav-button'} onClick={() => { setSelectedPhotoId(null); setSelectedUsername(null); setActiveView('feed'); }}>Стрічка</button>
-              <button className={activeView === 'profile' ? 'nav-button active' : 'nav-button'} onClick={() => setActiveView('profile')}>Профіль</button>
-              {['admin', 'moderator'].includes(currentRole) && <button className={activeView === 'admin' ? 'nav-button active' : 'nav-button'} onClick={() => setActiveView('admin')}>Керування</button>}
-              {['admin', 'moderator'].includes(currentRole) && <button className={activeView === 'moderation' ? 'nav-button active' : 'nav-button'} onClick={() => setActiveView('moderation')}>Модерація</button>}
+            <nav className="main-nav" aria-label="Main navigation">
+              <button className={activeView === 'feed' ? 'nav-button active' : 'nav-button'} onClick={() => { setSelectedPhotoId(null); setSelectedUsername(null); setActiveView('feed'); }}>Feed</button>
+              <button className={activeView === 'profile' ? 'nav-button active' : 'nav-button'} onClick={() => setActiveView('profile')}>Profile</button>
+              {['admin', 'moderator'].includes(currentRole) && <button className={activeView === 'admin' ? 'nav-button active' : 'nav-button'} onClick={() => setActiveView('admin')}>Management</button>}
+              {['admin', 'moderator'].includes(currentRole) && <button className={activeView === 'moderation' ? 'nav-button active' : 'nav-button'} onClick={() => setActiveView('moderation')}>Moderation</button>}
             </nav>
-            <button className="logout-button" onClick={handleLogout}>Вийти</button>
+            <button className="logout-button" onClick={handleLogout}>Log out</button>
           </div>
           {selectedPhotoId ? <PhotoPage photoId={selectedPhotoId} onBack={() => setSelectedPhotoId(null)} /> : selectedUsername ? <PublicProfile username={selectedUsername} onPhotoSelect={setSelectedPhotoId} onBack={() => setSelectedUsername(null)} /> : activeView === 'feed' ? <PhotoFeed onPhotoSelect={setSelectedPhotoId} onProfileSelect={setSelectedUsername} /> : activeView === 'profile' ? <Profile /> : activeView === 'admin' ? <AdminPanel currentRole={currentRole} /> : <ModerationPanel />}
         </div>

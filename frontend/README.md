@@ -16,34 +16,34 @@ The React Compiler is not enabled on this template because of its impact on dev 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
 
 
-## Запуск
+## Running the Frontend
 
-1. Встановіть Node.js 22 або новішу сумісну версію. Якщо використовується `nvm`:
+1. Install Node.js 22 or a newer compatible version. If you use `nvm`:
 
 	```bash
 	nvm install 22
 	nvm use 22
 	```
 
-2. Встановіть залежності:
+2. Install dependencies:
 
 	```bash
 	npm install
 	```
 
-3. Запустіть сервер розробки:
+3. Start the development server:
 
 	```bash
 	npm run dev
 	```
 
-4. Відкрийте у браузері:
+4. Open this URL in a browser:
 
 	```text
 	http://localhost:5173
 	```
 
-Vite у режимі розробки використовує HTTP, а не HTTPS. Не додавайте `https://` до цієї адреси.
+Vite uses HTTP, not HTTPS, in development mode. Do not add `https://` to this address.
 
 
 

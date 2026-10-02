@@ -9,7 +9,7 @@ from src.services.qrcode import generate_qr_code_url  # Імпортуємо п�
 from src.services.auth import auth_service
 from src.database.db import get_db
 
-# 1. Тестуємо рольову модель доступу (RBAC)
+# 1. Test Role-Based Access Control (RBAC)
 def test_role_access_allowed():
     access = RoleAccess([UserRole.ADMIN])
     mock_admin_user = User(role=UserRole.ADMIN, is_active=True, is_confirmed=True)
@@ -25,7 +25,7 @@ def test_role_access_forbidden():
         access(current_user=mock_regular_user)
     assert exc_info.value.status_code == 403
 
-# 2. Тест Blacklist
+# 2. Test Blacklist
 def test_blacklist_service_real_methods_coverage(monkeypatch):
     mock_redis = MagicMock()
     mock_redis.get.return_value = None
@@ -37,7 +37,7 @@ def test_blacklist_service_real_methods_coverage(monkeypatch):
     res = blacklist_service.is_token_blacklisted("token_123")
     assert res is False or res is True or res is None
 
-# 3. Тестуємо методи сервісу Cloudinary (Включаючи видалення)
+# 3. Test Cloudinary service methods (including deletion)
 def test_cloudinary_service_methods(monkeypatch):
     mock_uploader = MagicMock()
     mock_uploader.upload.return_value = {"secure_url": "https://test.com", "public_id": "123"}
@@ -71,7 +71,7 @@ def test_get_db_closes_session():
     db_generator.close()
     assert db_session is not None
 
-# 4. Тестуємо сервіс пошта
+# 4. Test Email service
 @pytest.mark.anyio
 async def test_email_service_direct(monkeypatch):
     mock_fastmail = MagicMock()
@@ -82,11 +82,11 @@ async def test_email_service_direct(monkeypatch):
     await service_email.send_reset_password_email("test@test.com", "user", "http://localhost/")
     assert True
 
-# 5. Виправлений Unit-тест для QR-кодів (Передаємо 3 параметри + мокаємо хмару)
+# 5. Fixed Unit-test for QR-codes (Passing 3 parameters + mocking the cloud)
 def test_qr_code_service_direct(monkeypatch):
-    # Мокаємо метод завантаження Cloudinary всередині qrcode.py
+    # Mock the Cloudinary upload method inside qrcode.py
     monkeypatch.setattr(cloudinary_service, "upload_photo", lambda file, folder: {"secure_url": "https://fake-cloudinary.com"})
     
-    # Передаємо всі 3 обов'язкові параметри з вашої сигнатури функції
+    # Pass all 3 required parameters from your function signature
     qr_url = generate_qr_code_url("https://fake-url.com", "test_user", 42)
     assert qr_url == "https://fake-cloudinary.com"
