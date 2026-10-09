@@ -123,6 +123,7 @@ To run and edit the code locally in an IDE with Poetry:
    ```
 
 5. **Start the frontend in development mode:**
+Open separate terminal and run
 
    ```bash
    cd frontend
