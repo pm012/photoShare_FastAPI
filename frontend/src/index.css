@@ -2,6 +2,7 @@
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #d8d7c3;
+  --bg-edge: #b8b7a6; 
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
   --accent: #aa3bff;
@@ -19,7 +20,7 @@
   letter-spacing: 0.18px;
   color-scheme: light dark;
   color: var(--text);
-  background: var(--bg);
+  background: var(--bg-edge);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -34,7 +35,8 @@
   :root {
     --text: #9ca3af;
     --text-h: #f3f4f6;
-    --bg: #e6e3c6dc;
+     --bg: #e9e7ce;     
+    --bg-edge: #c6c4af; 
     --border: #abc2d8;
     --code-bg: #9094ad;
     --accent: #c084fc;
@@ -64,6 +66,7 @@ body {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  background: var(--bg);
 }
 
 h1,
@@ -115,7 +118,7 @@ form input[type="text"],
 form input[id="profile-username"],
 form input[type="email"],
 form input[type="password"] {
-  background-color: #e7e2e2 !important; 
+  background-color: #b8b4b4 !important; 
   color: #222222 !important;            
   border: 1px solid #ccc !important;     
   border-radius: 4px;                    
