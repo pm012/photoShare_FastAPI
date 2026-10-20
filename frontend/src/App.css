@@ -199,9 +199,9 @@
 .app-header { display: flex; align-items: center; gap: 28px; padding: 18px 42px; border-bottom: 1px solid #ded1c7; background: #fffdf9; }
 .brand-button { padding: 0; border: 0; color: #2d2725; background: transparent; cursor: pointer; font: 800 22px/1 var(--sans); letter-spacing: -.8px; }
 .main-nav { display: flex; gap: 4px; margin-right: auto; }
-.nav-button, .logout-button { padding: 9px 12px; border: 0; color: #756b68; background: transparent; background-color: #e9c685; cursor: pointer; font: inherit; font-size: 14px; }
-.nav-button.active { color: #db5a3c; font-weight: 800; }
-.logout-button { color: #9e2f24; border: 1px solid #e4aaa0; border-radius: 4px; }
+.nav-button, .logout-button { padding: 9px 12px; border: 0; color: #756b68; background: transparent; background-color: #c7bd8f; cursor: pointer; font: inherit; font-size: 14px; }
+.nav-button.active { color: #966459; font-weight: 800; }
+.logout-button { color: #9e2f24; border: 1px solid #e4d2a0; border-radius: 4px; }
 
 .profile-page { width: min(1126px, 100%); margin: 0 auto; padding: 56px 42px 72px; box-sizing: border-box; text-align: left; }
 .profile-hero { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 22px; padding-bottom: 36px; border-bottom: 1px solid #ded1c7; }
@@ -355,7 +355,7 @@
 .primary-button {
   padding: 13px 18px;
   color: #fffaf5;
-  background: #db5a3c;
+  background: #9e5f51;
   border-radius: 5px;
   box-shadow: 0 8px 16px rgba(166, 62, 37, .18);
 }
