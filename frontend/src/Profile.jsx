@@ -3,6 +3,7 @@ import api from './api';
 import { AvatarUpload } from './AvatarUpload'; // Interactive avatar uploader
 import ProfilePhotoGrid from './ProfilePhotoGrid';
 import './Profile.css';
+import './ProfileInfo.css';
 
 const formatDate = (date) => new Intl.DateTimeFormat('en-US', {
     day: 'numeric',
@@ -104,48 +105,52 @@ function Profile({ onPhotoSelect }) {
 
     return (
         <main className="profile-page">
-            <section className="pr-hero">
+            <section className="pr-hero pr-hero--profile">
                 <AvatarUpload
                     currentAvatarUrl={user.avatar_url}
                     userName={user.username}
                     onAvatarUpdated={handleAvatarUpdated}
                 />
 
-                <div className="pr-intro">
-                    {isEditing ? (
-                        <form className="pr-username-form" onSubmit={handleSaveUsername}>
-                            <label className="pr-label" htmlFor="profile-username">Username</label>
-                            <div className="pr-username-form__row">
-                                <input id="profile-username" className="field" type="text" value={username} onChange={(event) => setUsername(event.target.value)} minLength={3} maxLength={50} autoComplete="off" autoFocus />
-                                <button className="btn btn-primary" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
-                                <button className="btn btn-secondary" type="button" onClick={handleCancelEdit} disabled={saving}>Cancel</button>
-                            </div>
-                        </form>
-                    ) : (
-                        <div className="pr-name-row">
-                            <h2>@{user.username}</h2>
-                            <button className="btn btn-secondary" type="button" onClick={() => { setIsEditing(true); setSaveMessage(''); }}>Edit</button>
+                <div className="pi-panel">
+                    <dl className="pi-list">
+                        <div className="pi-row">
+                            <dt>Username</dt>
+                            <dd>
+                                {isEditing ? (
+                                    <form className="pi-edit" onSubmit={handleSaveUsername}>
+                                        <input className="field" type="text" aria-label="Username" value={username} onChange={(event) => setUsername(event.target.value)} minLength={3} maxLength={50} autoComplete="off" autoFocus />
+                                        <button className="btn btn-primary" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
+                                        <button className="btn btn-secondary" type="button" onClick={handleCancelEdit} disabled={saving}>Cancel</button>
+                                    </form>
+                                ) : (
+                                    <>
+                                        <span className="pi-username">@{user.username}</span>
+                                        <button className="pi-icon-btn" type="button" aria-label="Edit username" title="Edit username" onClick={() => { setIsEditing(true); setSaveMessage(''); }}>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                                            </svg>
+                                        </button>
+                                    </>
+                                )}
+                            </dd>
                         </div>
-                    )}
-                    <p className="pr-muted">{user.email}</p>
+                        <div className="pi-row"><dt>Email</dt><dd>{user.email}</dd></div>
+                        <div className="pi-row">
+                            <dt>Status</dt>
+                            <dd><span className={user.is_active ? 'pi-status is-active' : 'pi-status'}><span className="pi-dot" aria-hidden="true"></span>{user.is_active ? 'Active' : 'Inactive'}</span></dd>
+                        </div>
+                        <div className="pi-row"><dt>Number of photos</dt><dd>{photos.length}</dd></div>
+                        <div className="pi-row"><dt>Role</dt><dd>{roleLabel(user.role)}</dd></div>
+                        <div className="pi-row"><dt>Member since</dt><dd>{formatDate(user.created_at)}</dd></div>
+                    </dl>
                 </div>
-
-                <span className={user.is_active ? 'pr-badge is-active' : 'pr-badge'}>
-                    <span className="pr-badge__dot" aria-hidden="true"></span>
-                    {user.is_active ? 'Active account' : 'Inactive account'}
-                </span>
             </section>
 
             {error && <p className="error-message" role="alert" style={{ marginTop: 20 }}>{error}</p>}
             {saveMessage && <p className="success-message" role="status" style={{ marginTop: 20 }}>{saveMessage}</p>}
 
-            <section className="pr-stats" aria-label="Profile statistics">
-                <div className="pr-stat"><strong>{photos.length}</strong><span>Photos</span></div>
-                <div className="pr-stat"><strong>{roleLabel(user.role)}</strong><span>Role</span></div>
-                <div className="pr-stat"><strong>{formatDate(user.created_at)}</strong><span>Member since</span></div>
-            </section>
-
-            <section>
+            <section style={{ marginTop: 40 }}>
                 <div className="pr-section-header"><h3>My photos</h3><span>{photos.length} {photos.length === 1 ? 'photo' : 'photos'}</span></div>
                 {photos.length === 0 ? <div className="feed-status">You haven't uploaded any photos yet.</div> : <ProfilePhotoGrid photos={photos} onSelect={onPhotoSelect} />}
             </section>

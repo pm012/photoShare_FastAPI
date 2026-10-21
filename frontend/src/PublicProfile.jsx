@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from './api';
 import ProfilePhotoGrid from './ProfilePhotoGrid';
+import UserAvatar from './UserAvatar';
 import './Profile.css';
 
 const formatDate = (date) => new Intl.DateTimeFormat('en-US', {
@@ -45,7 +46,7 @@ function PublicProfile({ username, onPhotoSelect, onBack }) {
         <main className="public-profile-page">
             {backButton}
             <section className="pr-hero">
-                <div className="pr-avatar" aria-hidden="true">{profile.username.slice(0, 1).toUpperCase()}</div>
+                <UserAvatar username={profile.username} url={profile.avatar_url} size={120} />
                 <div className="pr-intro">
                     <div className="pr-name-row"><h2>@{profile.username}</h2></div>
                     <p className="pr-muted">Member since {formatDate(profile.created_at)}</p>

@@ -14,3 +14,4 @@ class PhotoSearchResponse(BaseModel):
     created_at: datetime
     average_rating: float  # For visualization when filtering by rating (average - with a floating point)
     model_config = ConfigDict(from_attributes=True)
+    avatar_url: Optional[str] = None

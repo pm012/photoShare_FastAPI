@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import UploadPhoto from './UploadPhoto';
 import api from './api';
+import UserAvatar from './UserAvatar';
 import './PhotoFeed.css';
 
 const PAGE_SIZE = 20;
@@ -64,7 +65,7 @@ function PhotoCard({ photo, onOpen, onOpenProfile, onZoom, onTagClick }) {
 
             <div className="photo-body">
                 <button className="photo-author" type="button" onClick={() => onOpenProfile(photo.username)} aria-label={`Open profile of ${photo.username}`}>
-                    <span className="photo-author__avatar" aria-hidden="true">{photo.username?.[0]?.toUpperCase()}</span>
+                    <UserAvatar username={photo.username} url={photo.avatar_url} size={26} />
                     <span className="photo-author__name">@{photo.username}</span>
                 </button>
 

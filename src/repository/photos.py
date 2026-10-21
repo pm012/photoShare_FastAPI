@@ -131,6 +131,7 @@ def search_photos(
             "id": photo.id,
             "user_id": photo.user_id,
             "username": photo.user.username,
+            "avatar_url": photo.user.avatar_url,
             "url": photo.url,
             "description": photo.description,
             "tags": photo.tags,

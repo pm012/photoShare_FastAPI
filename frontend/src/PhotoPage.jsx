@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from './api';
+import UserAvatar from './UserAvatar';
 import './PhotoPage.css';
 
 const STAFF_ROLES = ['admin', 'moderator'];
@@ -157,6 +158,9 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
     const isOwner = currentUser.id === photo.user_id;
     const canManagePhoto = isOwner || isStaff;
     const canRate = !isOwner;
+    // The API does not return usernames for photos/comments yet, so for the current user's own content use /users/me.
+    const authorName = photo.username || (isOwner ? currentUser.username : null);
+    const getCommentAuthor = (comment) => comment.username || (comment.user_id === currentUser.id ? currentUser.username : null);
     const shownRating = hoverRating || myRating;
     const averageRating = Number(rating?.average_rating || 0);
     const totalVotes = rating?.total_votes || 0;
@@ -174,10 +178,10 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
 
                 <aside className="pd-sidebar">
                     <section className="pd-card">
-                        {photo.username && (
-                            <button className="pd-author" type="button" onClick={() => onProfileSelect?.(photo.username)} aria-label={`Open profile of ${photo.username}`}>
-                                <span className="pd-author__avatar" aria-hidden="true">{photo.username[0].toUpperCase()}</span>
-                                <span className="pd-author__name">@{photo.username}</span>
+                        {authorName && (
+                            <button className="pd-author" type="button" onClick={() => onProfileSelect?.(authorName)} aria-label={`Open profile of ${authorName}`}>
+                                <UserAvatar username={authorName} url={photo.avatar_url || (isOwner ? currentUser.avatar_url : null)} size={28} />
+                                <span className="pd-author__name">@{authorName}</span>
                             </button>
                         )}
                         <h2>{photo.description || 'Photo without a description'}</h2>
@@ -277,8 +281,8 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
                     ) : comments.map((comment) => (
                         <article className="pd-comment" key={comment.id}>
                             <div className="pd-comment__meta">
-                                {comment.username ? (
-                                    <button className="pd-link-btn" type="button" onClick={() => onProfileSelect?.(comment.username)}>@{comment.username}</button>
+                                {getCommentAuthor(comment) ? (
+                                    <button className="pd-link-btn" type="button" onClick={() => onProfileSelect?.(getCommentAuthor(comment))}>@{getCommentAuthor(comment)}</button>
                                 ) : (
                                     <strong>User #{comment.user_id}</strong>
                                 )}

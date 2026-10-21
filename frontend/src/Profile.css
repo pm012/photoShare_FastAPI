@@ -18,12 +18,12 @@
 .pr-avatar {
   display: grid;
   place-items: center;
-  width: 92px;
+  width: 120px;            /* same size as the avatar uploader */
   aspect-ratio: 1;
   color: #fffaf5;
   background: #db5a3c;
   border-radius: 50%;
-  font-size: 38px;
+  font-size: 46px;
   font-weight: 800;
 }
 

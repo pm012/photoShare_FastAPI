@@ -1,148 +1,118 @@
-import React, { useRef, useState } from "react";
-import api from "./api";
+import { useEffect, useRef, useState } from 'react';
+import api from './api';
+import './AvatarUpload.css';
 
 const MAX_SIZE_MB = 3;
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
-export const AvatarUpload = ({ currentAvatarUrl, userName = "User", onAvatarUpdated }) => {
-  const fileInputRef = useRef(null);
-  const [preview, setPreview] = useState(currentAvatarUrl || null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+export const AvatarUpload = ({ currentAvatarUrl, userName = 'User', onAvatarUpdated }) => {
+    const fileInputRef = useRef(null);
+    const objectUrlRef = useRef(null); // temporary preview URL that must be released
+    const [preview, setPreview] = useState(currentAvatarUrl || null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
-  const handleFileSelect = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const releaseObjectUrl = () => {
+        if (objectUrlRef.current) {
+            URL.revokeObjectURL(objectUrlRef.current);
+            objectUrlRef.current = null;
+        }
+    };
 
-    setError(null);
+    useEffect(() => releaseObjectUrl, []);
 
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      setError("Unsupported format. Choose PNG, JPG, or WEBP.");
-      return;
-    }
+    const openFilePicker = () => {
+        if (!loading) fileInputRef.current?.click();
+    };
 
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      setError(`File size must not exceed ${MAX_SIZE_MB} MB.`);
-      return;
-    }
+    const handleFileSelect = async (event) => {
+        const file = event.target.files?.[0];
+        event.target.value = ''; // lets the same file be chosen again later
+        if (!file) return;
 
-    const objectUrl = URL.createObjectURL(file);
-    setPreview(objectUrl);
+        setError('');
 
-    const formData = new FormData();
-    formData.append("file", file);
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            setError('Unsupported format. Choose PNG, JPG, or WEBP.');
+            return;
+        }
+        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+            setError(`File size must not exceed ${MAX_SIZE_MB} MB.`);
+            return;
+        }
 
-    setLoading(true);
-    try {
-      const response = await api.post("/users/me/avatar", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+        // Show the new picture immediately while it uploads.
+        const previousPreview = preview;
+        releaseObjectUrl();
+        objectUrlRef.current = URL.createObjectURL(file);
+        setPreview(objectUrlRef.current);
 
-      setPreview(response.data.avatar_url);
-      onAvatarUpdated(response.data.avatar_url);
-    } catch (err) {
-      setError(err.response?.data?.detail || "Could not upload avatar.");
-      setPreview(currentAvatarUrl || null);
-    } finally {
-      setLoading(false);
-    }
-  };
+        const formData = new FormData();
+        formData.append('file', file);
 
-  const handleDeleteAvatar = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await api.delete("/users/me/avatar");
-      setPreview(null);
-      onAvatarUpdated(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    } catch (err) {
-      setError(err.response?.data?.detail || "Could not delete avatar.");
-    } finally {
-      setLoading(false);
-    }
-  };
+        setLoading(true);
+        try {
+            const response = await api.post('/users/me/avatar', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            releaseObjectUrl();
+            setPreview(response.data.avatar_url);
+            onAvatarUpdated?.(response.data.avatar_url);
+        } catch (err) {
+            const detail = err.response?.data?.detail;
+            setError(Array.isArray(detail) ? detail.map((item) => item.msg).join(', ') : detail || 'Could not upload avatar.');
+            releaseObjectUrl();
+            setPreview(previousPreview);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
-      {/* Large avatar with a hover effect. */}
-      <div 
-        onClick={() => !loading && fileInputRef.current?.click()}
-        style={{
-          position: "relative",
-          width: "120px",
-          height: "120px",
-          borderRadius: "50%",
-          overflow: "hidden",
-          border: "2px solid #444",
-          backgroundColor: "#222",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: loading ? "not-allowed" : "pointer",
-        }}
-        className="avatar-container-hover"
-      >
-        {preview ? (
-          <img src={preview} alt={userName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
-          <span style={{ fontSize: "36px", fontWeight: "600", color: "#888" }}>
-            {userName.charAt(0).toUpperCase()}
-          </span>
-        )}
+    const handleDeleteAvatar = async () => {
+        if (!window.confirm('Remove your avatar?')) return;
+        setLoading(true);
+        setError('');
+        try {
+            await api.delete('/users/me/avatar');
+            releaseObjectUrl();
+            setPreview(null);
+            onAvatarUpdated?.(null);
+        } catch (err) {
+            setError(err.response?.data?.detail || 'Could not remove avatar.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        {/* Show a translucent overlay on hover. */}
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          backgroundColor: "rgba(0, 0, 0, 0.6)",
-          color: "#fff",
-          fontSize: "12px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          opacity: 0,
-          transition: "opacity 0.2s ease",
-        }} className="avatar-overlay">
-          {loading ? "..." : "Change photo"}
+    return (
+        <div className="av-root">
+            {/* The picture itself is the "change photo" control. */}
+            <button className="av-avatar" type="button" onClick={openFilePicker} disabled={loading} aria-label={preview ? 'Change profile photo' : 'Upload profile photo'}>
+                {preview ? <img src={preview} alt={`${userName}'s avatar`} /> : <span aria-hidden="true">{userName.charAt(0).toUpperCase()}</span>}
+                <span className={loading ? 'av-overlay is-visible' : 'av-overlay'} aria-hidden="true">
+                    {loading ? 'Uploading...' : preview ? 'Change photo' : 'Add photo'}
+                </span>
+            </button>
+
+            <input
+                ref={fileInputRef}
+                className="visually-hidden"
+                type="file"
+                accept={ALLOWED_TYPES.join(',')}
+                onChange={handleFileSelect}
+                tabIndex={-1}
+                aria-hidden="true"
+            />
+
+            {preview ? (
+                <button className="btn btn-secondary av-remove" type="button" onClick={handleDeleteAvatar} disabled={loading}>
+                    Delete Profile Photo
+                </button>
+            ) : (
+                <p className="av-hint">Click the circle to add a photo</p>
+            )}
+
+            {error && <p className="av-error" role="alert">{error}</p>}
         </div>
-      </div>
-
-      {/* Hide the actual file input with display: none. */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileSelect}
-        accept="image/png, image/jpeg, image/webp"
-        style={{ display: "none" }} 
-      />
-
-      {/* Avatar controls. */}
-      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={loading}
-          className="secondary-button"
-          style={{ padding: "4px 12px", fontSize: "12px" }}
-        >
-          {preview ? "Update" : "Choose file"}
-        </button>
-
-        {preview && (
-          <button
-            type="button"
-            onClick={handleDeleteAvatar}
-            disabled={loading}
-            className="secondary-button"
-            style={{ padding: "4px 12px", fontSize: "12px", color: "#ff4d4d", borderColor: "#ff4d4d" }}
-          >
-            Delete
-          </button>
-        )}
-      </div>
-
-      {error && <p style={{ color: "#ff4d4d", fontSize: "12px", margin: "4px 0 0 0" }}>{error}</p>}
-    </div>
-  );
+    );
 };
