@@ -1,18 +1,28 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from './api';
+import './PhotoPage.css';
+
+const STAFF_ROLES = ['admin', 'moderator'];
+
+// Same normalisation as in App.jsx ("UserRole.ADMIN" -> "admin").
+const normalizeRole = (role) => {
+    const value = String(role || '').toLowerCase();
+    return value.includes('.') ? value.split('.').pop() : value;
+};
 
 const getErrorMessage = (error, fallback) => {
     const detail = error.response?.data?.detail;
     return Array.isArray(detail) ? detail.map((item) => item.msg).join(', ') : detail || fallback;
 };
 
-function PhotoPage({ photoId, onBack }) {
+function PhotoPage({ photoId, onBack, onProfileSelect }) {
     const [photo, setPhoto] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [comments, setComments] = useState([]);
     const [rating, setRating] = useState(null);
+    const [myRating, setMyRating] = useState(0);       // the stars the user has given (stays visible after clicking)
+    const [hoverRating, setHoverRating] = useState(0); // preview while hovering / focusing a star
     const [commentText, setCommentText] = useState('');
-    const [selectedRating, setSelectedRating] = useState(0);
     const [editingCommentId, setEditingCommentId] = useState(null);
     const [editingText, setEditingText] = useState('');
     const [description, setDescription] = useState('');
@@ -29,16 +39,19 @@ function PhotoPage({ photoId, onBack }) {
             setLoading(true);
             setError('');
             const photoResponse = await api.get(`/photos/${photoId}`);
-            const [userResponse, commentsResponse, ratingResponse] = await Promise.all([
+            const [userResponse, commentsResponse, ratingResponse, ratingsResponse] = await Promise.all([
                 api.get('/users/me'),
                 api.get(`/photos/${photoId}/comments`),
                 api.get(`/photos/${photoId}/rate/summary`),
+                // The page must still open if this list is not available for the current user.
+                api.get(`/photos/${photoId}/ratings`).catch(() => ({ data: [] })),
             ]);
             setPhoto(photoResponse.data);
             setDescription(photoResponse.data.description || '');
             setCurrentUser(userResponse.data);
             setComments(commentsResponse.data);
             setRating(ratingResponse.data);
+            setMyRating(ratingsResponse.data.find((item) => item.user_id === userResponse.data.id)?.rate || 0);
         } catch (err) {
             setError(getErrorMessage(err, 'Could not load the photo.'));
         } finally {
@@ -50,6 +63,13 @@ function PhotoPage({ photoId, onBack }) {
         const request = window.setTimeout(loadPhoto, 0);
         return () => window.clearTimeout(request);
     }, [loadPhoto]);
+
+    // Success messages disappear on their own.
+    useEffect(() => {
+        if (!actionMessage) return undefined;
+        const timer = window.setTimeout(() => setActionMessage(''), 4000);
+        return () => window.clearTimeout(timer);
+    }, [actionMessage]);
 
     const runAction = async (action, successMessage) => {
         try {
@@ -92,14 +112,16 @@ function PhotoPage({ photoId, onBack }) {
         }, 'Comment deleted.');
     };
 
+    // FIX: the old code called setSelectedRating(0) after saving, which cleared the stars right away.
+    // Now the chosen value is kept in `myRating`, so the stars stay filled.
     const handleRating = async (value) => {
         if (!value || photo.user_id === currentUser.id) return;
         await runAction(async () => {
             await api.post(`/photos/${photoId}/rate`, { rate: value });
+            setMyRating(value);
             const response = await api.get(`/photos/${photoId}/rate/summary`);
             setRating(response.data);
-            setSelectedRating(0);
-        }, 'Thanks for rating this photo.');
+        }, `You rated this photo ${value} out of 5.`);
     };
 
     const handleDescriptionSave = async () => {
@@ -126,28 +148,165 @@ function PhotoPage({ photoId, onBack }) {
         }, 'Transformed photo created.');
     };
 
-    if (loading) return <main className="photo-page"><div className="feed-status" role="status">Loading photo...</div></main>;
-    if (error && !photo) return <main className="photo-page"><button className="back-button" onClick={onBack}>← Back to feed</button><p className="error-message" role="alert">{error}</p></main>;
+    const backButton = <button className="btn btn-secondary pd-back" type="button" onClick={onBack}>← Back to feed</button>;
 
-    const canManagePhoto = currentUser.id === photo.user_id || ['admin', 'moderator'].includes(String(currentUser.role).toLowerCase());
-    const canRate = currentUser.id !== photo.user_id;
-    const canDeleteComments = ['admin', 'moderator'].includes(String(currentUser.role).toLowerCase());
+    if (loading) return <main className="photo-page"><div className="feed-status" role="status">Loading photo...</div></main>;
+    if (error && !photo) return <main className="photo-page">{backButton}<p className="error-message" role="alert">{error}</p></main>;
+
+    const isStaff = STAFF_ROLES.includes(normalizeRole(currentUser.role));
+    const isOwner = currentUser.id === photo.user_id;
+    const canManagePhoto = isOwner || isStaff;
+    const canRate = !isOwner;
+    const shownRating = hoverRating || myRating;
+    const averageRating = Number(rating?.average_rating || 0);
+    const totalVotes = rating?.total_votes || 0;
 
     return (
         <main className="photo-page">
-            <button className="back-button" onClick={onBack}>← Back to feed</button>
+            {backButton}
             {error && <p className="error-message" role="alert">{error}</p>}
             {actionMessage && <p className="success-message" role="status">{actionMessage}</p>}
-            <div className="photo-layout">
-                <section className="photo-viewer"><img src={photo.url} alt={photo.description || 'PhotoShare photo'} /></section>
-                <aside className="photo-sidebar">
-                    <div className="photo-meta"><p className="eyebrow">Photo detail</p><h2>{photo.description || 'Photo without a description'}</h2><div className="tag-list">{photo.tags?.map((tag) => <span className="tag" key={tag.id}>#{tag.name}</span>)}</div></div>
-                    <div className="rating-panel"><div><strong>{rating?.average_rating?.toFixed(1) || '0.0'}</strong><span> AVERAGE RATING · {rating?.total_votes || 0} ratings</span></div><div className="star-picker" aria-label="Rate this photo">{[1, 2, 3, 4, 5].map((value) => <button key={value} className={selectedRating >= value ? 'star selected' : 'star'} onClick={() => handleRating(value)} disabled={!canRate || submitting} aria-label={`${value} stars`}>★</button>)}</div>{!canRate && <small>You cannot rate your own photos.</small>}</div>
-                    {canManagePhoto && <section className="manage-panel"><h3>Manage photo</h3>{isEditingDescription ? <div className="inline-edit"><textarea value={description} onChange={(event) => setDescription(event.target.value)} rows="3" /><div><button className="primary-button" onClick={handleDescriptionSave} disabled={submitting}>Save</button><button className="secondary-button" onClick={() => setIsEditingDescription(false)}>Cancel</button></div></div> : <div className="manage-actions"><button className="secondary-button" onClick={() => setIsEditingDescription(true)}>Edit description</button><button className="danger-button" onClick={handleDeletePhoto} disabled={submitting}>Delete</button></div>}</section>}
-                    <form className="transform-panel" onSubmit={handleTransform}><h3>Create a version</h3><select value={preset} onChange={(event) => setPreset(event.target.value)}><option value="thumbnail">Thumbnail</option><option value="avatar">Avatar</option><option value="black_white">Black and white</option></select><button className="secondary-button" disabled={submitting}>Apply preset</button>{transformation && <div className="transformation-result"><img src={transformation.transformed_url} alt="Transformed photo" /><a href={transformation.qr_code_url} target="_blank" rel="noreferrer">View QR code</a></div>}</form>
+
+            <div className="pd-layout">
+                <section className="pd-viewer">
+                    <img src={photo.url} alt={photo.description || 'PhotoShare photo'} />
+                </section>
+
+                <aside className="pd-sidebar">
+                    <section className="pd-card">
+                        {photo.username && (
+                            <button className="pd-author" type="button" onClick={() => onProfileSelect?.(photo.username)} aria-label={`Open profile of ${photo.username}`}>
+                                <span className="pd-author__avatar" aria-hidden="true">{photo.username[0].toUpperCase()}</span>
+                                <span className="pd-author__name">@{photo.username}</span>
+                            </button>
+                        )}
+                        <h2>{photo.description || 'Photo without a description'}</h2>
+                        {photo.tags?.length > 0 && (
+                            <div className="pd-tags">
+                                {photo.tags.map((tag) => <span className="pd-tag" key={tag.id}>#{tag.name}</span>)}
+                            </div>
+                        )}
+                    </section>
+
+                    <section className="pd-card">
+                        <h3>Rating</h3>
+                        <p className="pd-score">
+                            <strong>{totalVotes ? averageRating.toFixed(1) : '–'}</strong>
+                            <span>{totalVotes ? `average · ${totalVotes} ${totalVotes === 1 ? 'rating' : 'ratings'}` : 'No ratings yet'}</span>
+                        </p>
+                        {canRate ? (
+                            <>
+                                <div className="pd-stars" role="group" aria-label="Your rating" onMouseLeave={() => setHoverRating(0)}>
+                                    {[1, 2, 3, 4, 5].map((value) => (
+                                        <button
+                                            key={value}
+                                            className={shownRating >= value ? 'pd-star is-active' : 'pd-star'}
+                                            type="button"
+                                            onClick={() => handleRating(value)}
+                                            onMouseEnter={() => setHoverRating(value)}
+                                            onFocus={() => setHoverRating(value)}
+                                            onBlur={() => setHoverRating(0)}
+                                            disabled={submitting}
+                                            aria-label={`Rate ${value} out of 5`}
+                                            aria-pressed={myRating === value}
+                                        >★</button>
+                                    ))}
+                                </div>
+                                <p className="pd-hint">{myRating ? `Your rating: ${myRating} out of 5` : 'Click a star to rate this photo'}</p>
+                            </>
+                        ) : (
+                            <p className="pd-hint">You cannot rate your own photos.</p>
+                        )}
+                    </section>
+
+                    {canManagePhoto && (
+                        <section className="pd-card">
+                            <h3>Manage photo</h3>
+                            {isEditingDescription ? (
+                                <>
+                                    <textarea className="field" aria-label="Photo description" value={description} onChange={(event) => setDescription(event.target.value)} rows="3" />
+                                    <div className="pd-actions">
+                                        <button className="btn btn-secondary" type="button" onClick={() => { setDescription(photo.description || ''); setIsEditingDescription(false); }} disabled={submitting}>Cancel</button>
+                                        <button className="btn btn-primary" type="button" onClick={handleDescriptionSave} disabled={submitting}>Save</button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="pd-actions">
+                                    <button className="btn btn-secondary" type="button" onClick={() => setIsEditingDescription(true)}>Edit description</button>
+                                    <button className="btn btn-danger" type="button" onClick={handleDeletePhoto} disabled={submitting}>Delete</button>
+                                </div>
+                            )}
+                        </section>
+                    )}
+
+                    <form className="pd-card" onSubmit={handleTransform}>
+                        <h3>Create a version</h3>
+                        <select className="field" aria-label="Preset" value={preset} onChange={(event) => setPreset(event.target.value)}>
+                            <option value="thumbnail">Thumbnail</option>
+                            <option value="avatar">Avatar</option>
+                            <option value="black_white">Black and white</option>
+                        </select>
+                        <button className="btn btn-secondary" type="submit" disabled={submitting}>Apply preset</button>
+                        {transformation && (
+                            <div className="pd-transformed">
+                                <img src={transformation.transformed_url} alt="Transformed photo" />
+                                <a href={transformation.qr_code_url} target="_blank" rel="noreferrer">View QR code</a>
+                            </div>
+                        )}
+                    </form>
                 </aside>
             </div>
-            <section className="comments-section"><div className="section-heading"><div><p className="eyebrow">Community</p><h3>Comments</h3></div><span>{comments.length}</span></div><form className="comment-form" onSubmit={handleCommentSubmit}><textarea value={commentText} onChange={(event) => setCommentText(event.target.value)} maxLength="500" placeholder="Write a comment..." rows="3" /><div><small>{commentText.length}/500</small><button className="primary-button" disabled={submitting || !commentText.trim()}>Post</button></div></form><div className="comment-list">{comments.length === 0 ? <p className="feed-status">No comments yet.</p> : comments.map((comment) => <article className="comment-item" key={comment.id}><div className="comment-avatar">{String(comment.user_id).slice(0, 1)}</div><div className="comment-content">{editingCommentId === comment.id ? <><textarea value={editingText} onChange={(event) => setEditingText(event.target.value)} maxLength="500" /><div><button className="primary-button" onClick={() => handleCommentUpdate(comment.id)} disabled={submitting}>Save</button><button className="secondary-button" onClick={() => setEditingCommentId(null)}>Cancel</button></div></> : <><p>{comment.text}</p><small>User #{comment.user_id} · {new Date(comment.created_at).toLocaleDateString('en-US')}</small><div className="comment-actions">{(comment.user_id === currentUser.id || ['admin', 'moderator'].includes(String(currentUser.role).toLowerCase())) && <button onClick={() => { setEditingCommentId(comment.id); setEditingText(comment.text); }}>Edit</button>}{canDeleteComments && <button onClick={() => handleCommentDelete(comment.id)} disabled={submitting}>Delete</button>}</div></>}</div></article>)}</div></section>
+
+            <section className="pd-comments" aria-labelledby="comments-title">
+                <div className="pd-comments__header">
+                    <h3 id="comments-title">Comments</h3>
+                    <span className="pd-count">{comments.length}</span>
+                </div>
+
+                <form className="pd-comment-form" onSubmit={handleCommentSubmit}>
+                    <textarea className="field" aria-label="Write a comment" value={commentText} onChange={(event) => setCommentText(event.target.value)} maxLength="500" placeholder="Write a comment..." rows="3" />
+                    <div className="pd-form-footer">
+                        <span>{commentText.length}/500</span>
+                        <button className="btn btn-primary" type="submit" disabled={submitting || !commentText.trim()}>Post</button>
+                    </div>
+                </form>
+
+                <div className="pd-comment-list">
+                    {comments.length === 0 ? (
+                        <p className="feed-status">No comments yet. Start the conversation.</p>
+                    ) : comments.map((comment) => (
+                        <article className="pd-comment" key={comment.id}>
+                            <div className="pd-comment__meta">
+                                {comment.username ? (
+                                    <button className="pd-link-btn" type="button" onClick={() => onProfileSelect?.(comment.username)}>@{comment.username}</button>
+                                ) : (
+                                    <strong>User #{comment.user_id}</strong>
+                                )}
+                                {' · '}{new Date(comment.created_at).toLocaleDateString('en-US')}
+                            </div>
+                            {editingCommentId === comment.id ? (
+                                <>
+                                    <textarea className="field" aria-label="Edit comment" value={editingText} onChange={(event) => setEditingText(event.target.value)} maxLength="500" rows="3" />
+                                    <div className="pd-actions">
+                                        <button className="btn btn-secondary" type="button" onClick={() => setEditingCommentId(null)} disabled={submitting}>Cancel</button>
+                                        <button className="btn btn-primary" type="button" onClick={() => handleCommentUpdate(comment.id)} disabled={submitting || !editingText.trim()}>Save</button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <p>{comment.text}</p>
+                                    {(comment.user_id === currentUser.id || isStaff) && (
+                                        <div className="pd-comment__actions">
+                                            <button className="pd-link-btn" type="button" onClick={() => { setEditingCommentId(comment.id); setEditingText(comment.text); }}>Edit</button>
+                                            {isStaff && <button className="pd-link-btn is-danger" type="button" onClick={() => handleCommentDelete(comment.id)} disabled={submitting}>Delete</button>}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </article>
+                    ))}
+                </div>
+            </section>
         </main>
     );
 }

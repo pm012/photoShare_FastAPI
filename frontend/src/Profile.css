@@ -1,0 +1,111 @@
+/* ==========================================================
+   Profile.css - shared by Profile.jsx, PublicProfile.jsx and ProfilePhotoGrid.jsx
+   Depends on ui.css. All class names start with "pr-".
+   ========================================================== */
+
+.pr-back { margin-bottom: 24px; }
+
+/* ---------- Hero ---------- */
+.pr-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: start;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--ui-line-soft);
+}
+
+.pr-avatar {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  aspect-ratio: 1;
+  color: #fffaf5;
+  background: #db5a3c;
+  border-radius: 50%;
+  font-size: 38px;
+  font-weight: 800;
+}
+
+.pr-intro { display: grid; gap: 6px; min-width: 0; }
+.pr-name-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.pr-name-row h2 {
+  margin: 0;
+  color: var(--ui-ink);
+  font-size: clamp(28px, 4vw, 40px);
+  letter-spacing: -1px;
+  overflow-wrap: anywhere;
+}
+.pr-muted { margin: 0; color: var(--ui-muted); }
+
+/* ---------- Username editing ---------- */
+.pr-username-form { display: grid; gap: 6px; }
+.pr-label { color: var(--ui-muted); font-size: 13px; font-weight: 700; }
+.pr-username-form__row { display: flex; flex-wrap: wrap; gap: 10px; }
+.pr-username-form .field { flex: 1 1 200px; max-width: 320px; width: auto; }
+
+/* ---------- Account status ---------- */
+.pr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  color: var(--ui-muted);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-line-soft);
+  border-radius: 999px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.pr-badge__dot { width: 8px; height: 8px; background: #9e2f24; border-radius: 50%; }
+.pr-badge.is-active .pr-badge__dot { background: #4d9b69; }
+
+/* ---------- Stats ---------- */
+.pr-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 28px 0 40px; }
+.pr-stat {
+  display: grid;
+  gap: 4px;
+  padding: 18px;
+  text-align: left;
+  background: var(--ui-panel);
+  border: 1px solid var(--ui-line-soft);
+  border-radius: 8px;
+}
+.pr-stat strong { color: var(--ui-ink); font-size: 20px; }
+.pr-stat span { color: var(--ui-muted); font-size: 13px; }
+
+/* ---------- Gallery ---------- */
+.pr-section-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+.pr-section-header h3 { margin: 0; color: var(--ui-ink); font-size: 24px; }
+.pr-section-header span { color: var(--ui-muted); font-size: 14px; }
+
+.pr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
+
+.pr-tile {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  color: inherit;
+  text-align: left;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-line-soft);
+  border-radius: 8px;
+  font: inherit;
+}
+button.pr-tile { cursor: pointer; transition: box-shadow 150ms ease; }
+button.pr-tile:hover { box-shadow: 0 8px 22px rgba(73, 47, 35, 0.14); }
+button.pr-tile:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+
+.pr-tile__img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: #e7ddd4; }
+.pr-tile__body { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; }
+.pr-tile__text { overflow: hidden; color: var(--ui-ink); font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+.pr-tile__text.is-empty { color: var(--ui-muted); font-style: italic; }
+.pr-tile__rating { flex: none; color: #c64c32; font-size: 13px; font-weight: 800; }
+.pr-tile__rating.is-empty { color: var(--ui-muted); font-weight: 400; }
+
+@media (max-width: 680px) {
+  .pr-hero { grid-template-columns: auto minmax(0, 1fr); }
+  .pr-badge { grid-column: 1 / -1; justify-self: start; }
+  .pr-stats { grid-template-columns: 1fr; }
+  .pr-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}

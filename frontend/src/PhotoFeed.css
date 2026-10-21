@@ -1,0 +1,220 @@
+/* ==========================================================
+   PhotoFeed.css - depends on the tokens/classes in ui.css
+   ========================================================== */
+
+.feed-page h2 { color: var(--ui-ink); }
+
+/* ---------- Toolbar ---------- */
+.feed-toolbar {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  margin-bottom: 28px;
+  background: var(--ui-panel);
+  border: 1px solid var(--ui-line-soft);
+  border-radius: 8px;
+}
+
+.feed-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px auto;
+  gap: 10px;
+}
+
+/* "Search by" dropdown glued to the text input */
+.search-group { display: flex; min-width: 0; }
+.search-group .field:first-child {
+  flex: 0 0 140px;
+  width: 140px;
+  border-radius: var(--ui-radius) 0 0 var(--ui-radius);
+}
+.search-group .field:last-child {
+  flex: 1;
+  min-width: 0;
+  margin-left: -1px;
+  border-radius: 0 var(--ui-radius) var(--ui-radius) 0;
+}
+.search-group .field:focus-visible { position: relative; z-index: 1; }
+
+/* ---------- Sort bar (works like a table header) ---------- */
+.sort-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ui-line-soft);
+}
+.sort-bar__label { margin-right: 4px; color: var(--ui-muted); font-size: 14px; font-weight: 700; }
+
+.sort-chip { min-width: 112px; justify-content: space-between; }
+.sort-chip__arrow { color: var(--ui-muted); font-size: 16px; }
+.sort-chip.is-active {
+  color: var(--ui-accent);
+  background: var(--ui-surface);
+  border-color: var(--ui-accent);
+  box-shadow: inset 0 -2px 0 var(--ui-accent);
+}
+.sort-chip.is-active .sort-chip__arrow { color: var(--ui-accent); }
+
+/* ---------- Grid ---------- */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  transition: opacity 150ms ease;
+}
+.photo-grid[aria-busy="true"] { opacity: 0.5; pointer-events: none; }
+
+/* ---------- Card ---------- */
+.photo-card {
+  position: relative;            /* anchor for the whole-card click area */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-line-soft);
+  border-radius: 8px;
+  transition: box-shadow 150ms ease;
+}
+.photo-card:hover { box-shadow: 0 8px 22px rgba(73, 47, 35, 0.14); }
+.photo-card:focus-within { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+
+.photo-media { position: relative; aspect-ratio: 4 / 3; background: #e7ddd4; }
+.photo-media img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+
+.photo-zoom {
+  position: absolute;
+  z-index: 2;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: #fff;
+  background: rgba(45, 39, 37, 0.72);
+  border: 0;
+  border-radius: 50%;
+  cursor: zoom-in;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+.photo-card:hover .photo-zoom,
+.photo-zoom:focus-visible { opacity: 1; }
+@media (hover: none) { .photo-zoom { opacity: 1; } }
+
+.photo-body { display: flex; flex: 1; flex-direction: column; gap: 10px; padding: 14px 16px 16px; }
+
+/* Author: always clickable, sits above the whole-card link */
+.photo-author {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 8px;
+  padding: 2px 0;
+  color: var(--ui-ink);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+}
+.photo-author__avatar {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  color: #fffaf5;
+  background: #db5a3c;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 800;
+}
+.photo-author:hover .photo-author__name { color: var(--ui-accent); text-decoration: underline; }
+
+/* Description is the real "open photo" button; ::after stretches it over the card */
+.photo-open {
+  padding: 0;
+  color: var(--ui-ink);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.photo-open::after { content: ''; position: absolute; z-index: 1; inset: 0; }
+.photo-open:focus-visible { outline: none; }
+.photo-description {
+  display: -webkit-box;
+  min-height: 2.9em;
+  overflow: hidden;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+.photo-description i { color: var(--ui-muted); }
+
+.photo-rating { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--ui-muted); font-size: 13px; font-weight: 700; }
+.photo-rating--empty { font-weight: 400; }
+.rating-stars { display: inline-flex; gap: 1px; color: #d8cbc1; font-size: 15px; line-height: 1; }
+.rating-star.is-filled { color: #f97316; }
+
+.tag-list { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: auto 0 0; list-style: none; }
+.tag {
+  position: relative;
+  z-index: 2;
+  padding: 4px 8px;
+  color: var(--ui-muted);
+  background: #f1e8e0;
+  border: 0;
+  border-radius: 3px;
+  font: inherit;
+  font-size: 12px;
+}
+button.tag { cursor: pointer; }
+button.tag:hover { color: var(--ui-accent); background: #e9dccf; }
+
+/* ---------- Loading skeleton ---------- */
+.photo-card--skeleton .photo-media,
+.skeleton-line {
+  background: linear-gradient(90deg, #e7ddd4 25%, #f1e8e0 50%, #e7ddd4 75%);
+  background-size: 200% 100%;
+  animation: feed-shimmer 1.4s ease-in-out infinite;
+}
+.skeleton-line { height: 14px; border-radius: 3px; }
+.skeleton-line.short { width: 40%; }
+@keyframes feed-shimmer { to { background-position: -200% 0; } }
+
+/* ---------- Empty state / pagination ---------- */
+.feed-status {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 56px 20px;
+  color: var(--ui-muted);
+  text-align: center;
+  background: var(--ui-panel);
+  border-radius: 8px;
+}
+.feed-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+.pagination { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 32px; color: var(--ui-muted); }
+
+/* ---------- Header + mobile ---------- */
+@media (max-width: 680px) {
+  .feed-filters { grid-template-columns: 1fr; }
+  .search-group .field:first-child { flex-basis: 112px; width: 112px; }
+  .feed-header .btn { width: 100%; }
+  .sort-chip { flex: 1; }
+  .photo-grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-line, .photo-card--skeleton .photo-media { animation: none; }
+}

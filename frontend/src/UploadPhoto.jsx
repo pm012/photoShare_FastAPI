@@ -1,5 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import api from './api';
+import './UploadPhoto.css';
+
+const MAX_TAGS = 5;
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', "image/jpg"];
+
+
+const formatSize = (bytes) => (bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`);
+
+// "a, b, A" -> ["a", "b"] (trimmed, empty and duplicate tags removed)
+const parseTags = (value) => value
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .filter((tag, index, allTags) => allTags.findIndex((item) => item.toLowerCase() === tag.toLowerCase()) === index);
 
 function UploadPhoto({ onUploadSuccess, onClose }) {
     const [file, setFile] = useState(null);
@@ -8,30 +22,45 @@ function UploadPhoto({ onUploadSuccess, onClose }) {
     const [tags, setTags] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef(null);
 
+    const normalizedTags = parseTags(tags);
+    const tooManyTags = normalizedTags.length > MAX_TAGS;
+
+    // Free the temporary preview URL when it changes or the dialog closes.
     useEffect(() => () => preview && URL.revokeObjectURL(preview), [preview]);
 
-    const handleFileChange = (e) => {
-        const selectedFile = e.target.files[0];
-        if (selectedFile) {
-            setFile(selectedFile);
-            if (preview) URL.revokeObjectURL(preview);
-            setPreview(URL.createObjectURL(selectedFile));
-            setError('');
+    const selectFile = (selectedFile) => {
+        if (!selectedFile) return;
+        if (!ALLOWED_TYPES.includes(selectedFile.type)) {
+            setError('Only JPEG, PNG, or WEBP images are supported.');
+            return;
         }
+        setFile(selectedFile);
+        setPreview(URL.createObjectURL(selectedFile));
+        setError('');
+    };
+
+    const handleFileChange = (e) => {
+        selectFile(e.target.files[0]);
+        e.target.value = ''; // lets the same file be picked again after removing it
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        selectFile(e.dataTransfer.files[0]);
     };
 
     const handleClearFile = () => {
-        if (preview) URL.revokeObjectURL(preview);
         setFile(null);
         setPreview('');
-        if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
-    const handleTagsChange = (e) => {
-        const nextTags = e.target.value;
-        if (nextTags.split(',').map((tag) => tag.trim()).filter(Boolean).length <= 5) setTags(nextTags);
+    // Ignore close requests while an upload is in progress.
+    const handleClose = () => {
+        if (!loading) onClose();
     };
 
     const handleSubmit = async (e) => {
@@ -40,10 +69,8 @@ function UploadPhoto({ onUploadSuccess, onClose }) {
             setError('Please choose an image file.');
             return;
         }
-
-        const normalizedTags = tags.split(',').map((tag) => tag.trim()).filter(Boolean).filter((tag, index, allTags) => allTags.findIndex((item) => item.toLowerCase() === tag.toLowerCase()) === index);
-        if (normalizedTags.length > 5) {
-            setError('You can add up to 5 unique tags.');
+        if (tooManyTags) {
+            setError(`You can add up to ${MAX_TAGS} unique tags.`);
             return;
         }
 
@@ -71,20 +98,61 @@ function UploadPhoto({ onUploadSuccess, onClose }) {
     };
 
     return (
-        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && handleClose()}>
             <section className="upload-modal" role="dialog" aria-modal="true" aria-labelledby="upload-title">
-                <div className="modal-heading"><div><p className="eyebrow">New post</p><h3 id="upload-title">Upload a photo</h3></div><button className="icon-button" type="button" onClick={onClose} aria-label="Close dialog">×</button></div>
+                <div className="modal-heading">
+                    <h3 id="upload-title">Upload a photo</h3>
+                    <button className="icon-button" type="button" onClick={handleClose} aria-label="Close dialog">×</button>
+                </div>
+
                 {error && <p className="error-message" role="alert">{error}</p>}
+
                 <form className="upload-form" onSubmit={handleSubmit}>
-                    <div className="file-picker">
-                        <label htmlFor="photo-file">Photo file</label>
-                        <input ref={fileInputRef} id="photo-file" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} required />
-                        <small>JPEG, PNG, or WEBP</small>
+                    <input ref={fileInputRef} id="photo-file" className="visually-hidden" type="file" accept={ALLOWED_TYPES.join(',')} onChange={handleFileChange} />
+
+                    {file ? (
+                        <div className="upload-file">
+                            <img src={preview} alt="Preview of selected photo" />
+                            <div className="upload-file__bar">
+                                <div className="upload-file__info">
+                                    <span className="upload-file__name">{file.name}</span>
+                                    <span className="upload-file__size">{formatSize(file.size)}</span>
+                                </div>
+                                <button className="btn btn-secondary" type="button" onClick={() => fileInputRef.current?.click()} disabled={loading}>Replace</button>
+                                <button className="btn btn-secondary" type="button" onClick={handleClearFile} disabled={loading}>Remove</button>
+                            </div>
+                        </div>
+                    ) : (
+                        <label
+                            htmlFor="photo-file"
+                            className={isDragging ? 'dropzone is-dragging' : 'dropzone'}
+                            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                            onDragLeave={() => setIsDragging(false)}
+                            onDrop={handleDrop}
+                        >
+                            <span className="dropzone__title">Drag a photo here or <u>browse</u></span>
+                            <small>JPEG, PNG, or WEBP</small>
+                        </label>
+                    )}
+
+                    <label className="upload-field">
+                        <span className="upload-field__label">Description</span>
+                        <textarea className="field" placeholder="Tell us about this moment..." value={description} onChange={(e) => setDescription(e.target.value)} rows="3" />
+                    </label>
+
+                    <label className="upload-field">
+                        <span className="upload-field__label">Tags</span>
+                        <input className="field" type="text" placeholder="nature, sunset, travel" autoComplete="off" value={tags} onChange={(e) => setTags(e.target.value)} aria-invalid={tooManyTags} />
+                        <span className={tooManyTags ? 'upload-field__hint is-error' : 'upload-field__hint'}>
+                            <span>{tooManyTags ? `Remove ${normalizedTags.length - MAX_TAGS} tag(s) to continue` : 'Separate tags with commas'}</span>
+                            <span>{normalizedTags.length}/{MAX_TAGS}</span>
+                        </span>
+                    </label>
+
+                    <div className="modal-actions">
+                        <button className="btn btn-secondary" type="button" onClick={handleClose} disabled={loading}>Cancel</button>
+                        <button className="btn btn-primary" type="submit" disabled={loading || tooManyTags}>{loading ? 'Uploading...' : 'Upload'}</button>
                     </div>
-                    {preview && <div className="preview-box"><img src={preview} alt="Preview of selected photo" /><button className="clear-button" type="button" onClick={handleClearFile}>Clear</button></div>}
-                    <label className="form-field"><span>Photo description</span><textarea placeholder="Tell us about this moment..." value={description} onChange={(e) => setDescription(e.target.value)} rows="3" /></label>
-                    <label className="form-field"><span>Tags <small>(up to 5, comma-separated)</small></span><input type="text" placeholder="nature, sunset, travel" value={tags} onChange={handleTagsChange} /></label>
-                    <div className="modal-actions"><button className="primary-button" type="submit" disabled={loading}>{loading ? 'Uploading...' : 'Upload'}</button><button className="secondary-button" type="button" onClick={onClose} disabled={loading}>Cancel</button></div>
                 </form>
             </section>
         </div>

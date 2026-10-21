@@ -1,14 +1,23 @@
 import { useEffect, useState } from 'react';
 import api from './api';
-import { AvatarUpload } from './AvatarUpload'; // Import new component
+import { AvatarUpload } from './AvatarUpload'; // Interactive avatar uploader
+import ProfilePhotoGrid from './ProfilePhotoGrid';
+import './Profile.css';
 
-const formatDate = (date) => new Intl.DateTimeFormat('uk-UA', {
+const formatDate = (date) => new Intl.DateTimeFormat('en-US', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
 }).format(new Date(date));
 
-function Profile() {
+// "UserRole.ADMIN" / "admin" -> "Admin"
+const roleLabel = (role) => {
+    const value = String(role || '').toLowerCase();
+    const name = value.includes('.') ? value.split('.').pop() : value;
+    return name.charAt(0).toUpperCase() + name.slice(1);
+};
+
+function Profile({ onPhotoSelect }) {
     const [user, setUser] = useState(null);
     const [photos, setPhotos] = useState([]);
     const [username, setUsername] = useState('');
@@ -24,12 +33,12 @@ function Profile() {
             setError('');
             const profileResponse = await api.get('/users/me');
             const profile = profileResponse.data;
-            const photosResponse = await api.get('/search/photos', {
-                params: { sort_by: 'date', order: 'desc' },
-            });
+            // The user's own photos come from the public-photos endpoint, so they are not
+            // limited to the first page of the global feed.
+            const photosResponse = await api.get(`/users/${encodeURIComponent(profile.username)}/photos`);
             setUser(profile);
             setUsername(profile.username);
-            setPhotos(photosResponse.data.filter((photo) => photo.user_id === profile.id));
+            setPhotos(photosResponse.data);
         } catch (err) {
             setError(err.response?.data?.detail || 'Failed to load the profile.');
         } finally {
@@ -42,11 +51,22 @@ function Profile() {
         return () => window.clearTimeout(request);
     }, []);
 
+    // Success messages disappear on their own.
+    useEffect(() => {
+        if (!saveMessage) return undefined;
+        const timer = window.setTimeout(() => setSaveMessage(''), 4000);
+        return () => window.clearTimeout(timer);
+    }, [saveMessage]);
+
     const handleSaveUsername = async (event) => {
         event.preventDefault();
         const nextUsername = username.trim();
         if (!nextUsername) {
-            setError("Username shouldn't be empty.");
+            setError('Username cannot be empty.');
+            return;
+        }
+        if (nextUsername === user.username) {
+            setIsEditing(false);
             return;
         }
 
@@ -58,18 +78,25 @@ function Profile() {
             setUser(response.data);
             setUsername(response.data.username);
             setIsEditing(false);
-            setSaveMessage('Username was successfully updated.');
+            setSaveMessage('Username updated.');
         } catch (err) {
-            setError(err.response?.data?.detail || 'Note able to update usernmae.');
+            const detail = err.response?.data?.detail;
+            setError(Array.isArray(detail) ? detail.map((item) => item.msg).join(', ') : detail || 'Could not update the username.');
         } finally {
             setSaving(false);
         }
     };
 
-    // Update link to avatar in internal state of the profile after uploading to Cloudinary
+    const handleCancelEdit = () => {
+        setUsername(user.username);
+        setError('');
+        setIsEditing(false);
+    };
+
+    // Update the avatar link in the profile state after it was uploaded to Cloudinary.
     const handleAvatarUpdated = (newUrl) => {
         setUser((prevUser) => ({ ...prevUser, avatar_url: newUrl }));
-        setSaveMessage(newUrl ? 'Avatar was successfully updated.' : 'Avatar is successfully deleted.');
+        setSaveMessage(newUrl ? 'Avatar updated.' : 'Avatar removed.');
     };
 
     if (loading) return <main className="profile-page"><div className="feed-status" role="status">Loading profile...</div></main>;
@@ -77,41 +104,50 @@ function Profile() {
 
     return (
         <main className="profile-page">
-            <section className="profile-hero">
-                {/* Changed old static avatar to interactive loader*/}
-                <AvatarUpload 
-                    currentAvatarUrl={user.avatar_url} 
-                    userName={user.username} 
-                    onAvatarUpdated={handleAvatarUpdated} 
+            <section className="pr-hero">
+                <AvatarUpload
+                    currentAvatarUrl={user.avatar_url}
+                    userName={user.username}
+                    onAvatarUpdated={handleAvatarUpdated}
                 />
-                
-                <div className="profile-intro">
-                    <p className="eyebrow">Your space</p>
+
+                <div className="pr-intro">
                     {isEditing ? (
-                        <form className="username-form" onSubmit={handleSaveUsername}>
-                            <label htmlFor="profile-username">Username</label>
-                            <div><input id="profile-username" value={username} onChange={(event) => setUsername(event.target.value)} autoFocus /><button className="primary-button" disabled={saving}>{saving ? 'Зберігаємо...' : 'Зберегти'}</button></div>
+                        <form className="pr-username-form" onSubmit={handleSaveUsername}>
+                            <label className="pr-label" htmlFor="profile-username">Username</label>
+                            <div className="pr-username-form__row">
+                                <input id="profile-username" className="field" type="text" value={username} onChange={(event) => setUsername(event.target.value)} minLength={3} maxLength={50} autoComplete="off" autoFocus />
+                                <button className="btn btn-primary" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
+                                <button className="btn btn-secondary" type="button" onClick={handleCancelEdit} disabled={saving}>Cancel</button>
+                            </div>
                         </form>
                     ) : (
-                        <div className="profile-title-row"><h2>@{user.username}</h2><button className="secondary-button" onClick={() => { setIsEditing(true); setSaveMessage(''); }}>Редагувати</button></div>
+                        <div className="pr-name-row">
+                            <h2>@{user.username}</h2>
+                            <button className="btn btn-secondary" type="button" onClick={() => { setIsEditing(true); setSaveMessage(''); }}>Edit</button>
+                        </div>
                     )}
-                    <p className="profile-email">{user.email}</p>
+                    <p className="pr-muted">{user.email}</p>
                 </div>
-                <div className="profile-status"><span className={user.is_active ? 'status-dot active' : 'status-dot'}></span>{user.is_active ? 'Активний акаунт' : 'Акаунт неактивний'}</div>
+
+                <span className={user.is_active ? 'pr-badge is-active' : 'pr-badge'}>
+                    <span className="pr-badge__dot" aria-hidden="true"></span>
+                    {user.is_active ? 'Active account' : 'Inactive account'}
+                </span>
             </section>
 
-            {error && <p className="error-message" role="alert">{error}</p>}
-            {saveMessage && <p className="success-message" role="status">{saveMessage}</p>}
+            {error && <p className="error-message" role="alert" style={{ marginTop: 20 }}>{error}</p>}
+            {saveMessage && <p className="success-message" role="status" style={{ marginTop: 20 }}>{saveMessage}</p>}
 
-            <section className="profile-stats" aria-label="Статистика профілю">
-                <div><strong>{photos.length}</strong><span>Світлин</span></div>
-                <div><strong>{user.role}</strong><span>Роль</span></div>
-                <div><strong>{formatDate(user.created_at)}</strong><span>На PhotoShare з</span></div>
+            <section className="pr-stats" aria-label="Profile statistics">
+                <div className="pr-stat"><strong>{photos.length}</strong><span>Photos</span></div>
+                <div className="pr-stat"><strong>{roleLabel(user.role)}</strong><span>Role</span></div>
+                <div className="pr-stat"><strong>{formatDate(user.created_at)}</strong><span>Member since</span></div>
             </section>
 
-            <section className="profile-gallery">
-                <div className="section-heading"><div><p className="eyebrow">Archive</p><h3>My photos</h3></div><span>{photos.length} {photos.length === 1 ? 'photo' : 'photos'}</span></div>
-                {photos.length === 0 ? <div className="feed-status">You have not loaded any phtotos yet.</div> : <div className="profile-photo-grid">{photos.map((photo) => <article className="profile-photo" key={photo.id}><img src={photo.url} alt={photo.description || 'My photo'} /><div><p>{photo.description || 'No description'}</p><span>★ {photo.average_rating || '0.0'}</span></div></article>)}</div>}
+            <section>
+                <div className="pr-section-header"><h3>My photos</h3><span>{photos.length} {photos.length === 1 ? 'photo' : 'photos'}</span></div>
+                {photos.length === 0 ? <div className="feed-status">You haven't uploaded any photos yet.</div> : <ProfilePhotoGrid photos={photos} onSelect={onPhotoSelect} />}
             </section>
         </main>
     );

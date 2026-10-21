@@ -1,0 +1,55 @@
+/* ==========================================================
+   UploadPhoto.css - depends on ui.css
+   (.modal-backdrop, .upload-modal, .modal-heading, .upload-form,
+    .modal-actions and .icon-button still come from App.css)
+   ========================================================== */
+
+.upload-modal h3 { margin: 0; }
+
+/* ---------- Dropzone ---------- */
+.dropzone {
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  padding: 32px 16px;
+  color: var(--ui-muted);
+  text-align: center;
+  background: var(--ui-panel);
+  border: 2px dashed var(--ui-line);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+.dropzone:hover,
+.dropzone.is-dragging { background: #ebdfd4; border-color: var(--ui-accent); }
+.visually-hidden:focus-visible + .dropzone { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+.dropzone__title { color: var(--ui-ink); font-weight: 700; }
+.dropzone__title u { color: var(--ui-accent); }
+.dropzone small { font-size: 13px; }
+
+/* ---------- Selected file ---------- */
+.upload-file {
+  display: grid;
+  gap: 12px;
+  padding: 10px;
+  background: var(--ui-panel);
+  border: 1px solid var(--ui-line-soft);
+  border-radius: 8px;
+}
+.upload-file img { display: block; width: 100%; max-height: 240px; object-fit: contain; border-radius: 4px; }
+.upload-file__bar { display: flex; align-items: center; gap: 10px; }
+.upload-file__info { display: grid; flex: 1; min-width: 0; }
+.upload-file__name { overflow: hidden; color: var(--ui-ink); font-size: 14px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.upload-file__size { color: var(--ui-muted); font-size: 13px; }
+
+/* ---------- Fields ---------- */
+.upload-field { display: grid; gap: 6px; color: var(--ui-ink); }
+.upload-field__label { font-size: 14px; font-weight: 700; }
+.upload-field__hint { display: flex; justify-content: space-between; gap: 12px; color: var(--ui-muted); font-size: 13px; }
+.upload-field__hint.is-error { color: #9e2f24; }
+
+@media (max-width: 680px) {
+  .upload-file__bar { flex-wrap: wrap; }
+  .upload-file__info { flex-basis: 100%; }
+  .modal-actions .btn { flex: 1; }
+}

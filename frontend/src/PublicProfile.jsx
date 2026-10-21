@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import api from './api';
+import ProfilePhotoGrid from './ProfilePhotoGrid';
+import './Profile.css';
 
-const formatDate = (date) => new Intl.DateTimeFormat('uk-UA', {
+const formatDate = (date) => new Intl.DateTimeFormat('en-US', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -25,7 +27,7 @@ function PublicProfile({ username, onPhotoSelect, onBack }) {
                 setProfile(profileResponse.data);
                 setPhotos(photosResponse.data);
             } catch (err) {
-                setError(err.response?.data?.detail || 'Не вдалося завантажити профіль.');
+                setError(err.response?.data?.detail || 'Could not load the profile.');
             } finally {
                 setLoading(false);
             }
@@ -34,18 +36,27 @@ function PublicProfile({ username, onPhotoSelect, onBack }) {
         return () => window.clearTimeout(request);
     }, [username]);
 
+    const backButton = <button className="btn btn-secondary pr-back" type="button" onClick={onBack}>← Back</button>;
+
     if (loading) return <main className="public-profile-page"><div className="feed-status" role="status">Loading profile...</div></main>;
-    if (error) return <main className="public-profile-page"><button className="back-button" onClick={onBack}>← Back</button><p className="error-message" role="alert">{error}</p></main>;
+    if (error) return <main className="public-profile-page">{backButton}<p className="error-message" role="alert">{error}</p></main>;
 
     return (
         <main className="public-profile-page">
-            <button className="back-button" onClick={onBack}>← Back to the feed</button>
-            <section className="public-profile-hero">
-                <div className="profile-avatar" aria-hidden="true">{profile.username.slice(0, 1).toUpperCase()}</div>
-                <div><p className="eyebrow">Community member</p><h2>@{profile.username}</h2><p>На PhotoShare з {formatDate(profile.created_at)}</p></div>
-                <div className="public-profile-stat"><strong>{profile.photos_count}</strong><span>Photos</span></div>
+            {backButton}
+            <section className="pr-hero">
+                <div className="pr-avatar" aria-hidden="true">{profile.username.slice(0, 1).toUpperCase()}</div>
+                <div className="pr-intro">
+                    <div className="pr-name-row"><h2>@{profile.username}</h2></div>
+                    <p className="pr-muted">Member since {formatDate(profile.created_at)}</p>
+                </div>
+                <div className="pr-stat"><strong>{profile.photos_count}</strong><span>{profile.photos_count === 1 ? 'Photo' : 'Photos'}</span></div>
             </section>
-            <section className="profile-gallery"><div className="section-heading"><div><p className="eyebrow">Archive</p><h3>User's photo</h3></div><span>{photos.length} у стрічці</span></div>{photos.length === 0 ? <div className="feed-status">У цього користувача ще немає світлин.</div> : <div className="profile-photo-grid">{photos.map((photo) => <article className="profile-photo" key={photo.id} onClick={() => onPhotoSelect(photo.id)} onKeyDown={(event) => event.key === 'Enter' && onPhotoSelect(photo.id)} tabIndex="0" role="button"><img src={photo.url} alt={photo.description || "User's photo"} /><div><p>{photo.description || 'without description'}</p><span>★ {photo.average_rating || '0.0'}</span></div></article>)}</div>}</section>
+
+            <section style={{ marginTop: 32 }}>
+                <div className="pr-section-header"><h3>Photos</h3><span>{photos.length} {photos.length === 1 ? 'photo' : 'photos'}</span></div>
+                {photos.length === 0 ? <div className="feed-status">This user hasn't uploaded any photos yet.</div> : <ProfilePhotoGrid photos={photos} onSelect={onPhotoSelect} />}
+            </section>
         </main>
     );
 }

@@ -1,0 +1,117 @@
+/* ==========================================================
+   ui.css - shared UI primitives (import once, e.g. in App.jsx)
+   Every button and field uses the same height, radius and font,
+   so controls line up on any screen.
+   ========================================================== */
+
+:root {
+  --ui-h: 40px;                 /* height of EVERY button and field */
+  --ui-radius: 6px;
+  --ui-ink: #2d2725;
+  --ui-muted: #756b68;
+  --ui-line: #cdbdb2;
+  --ui-line-soft: #ded1c7;
+  --ui-surface: #fffdf9;
+  --ui-panel: #f2ebe4;
+  --ui-accent: #9e5f51;
+  --ui-accent-hover: #8a4f42;
+  --ui-focus: #db5a3c;
+  /* #b8b4b4 (the colour index.css forces on inputs) mixed 70% toward white */
+  --ui-input-bg: #eae9e9;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: var(--ui-h);
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.btn-primary {
+  color: #fffaf5;
+  background: var(--ui-accent);
+}
+.btn-primary:hover:not(:disabled) { background: var(--ui-accent-hover); }
+
+.btn-secondary {
+  color: var(--ui-ink);
+  background: var(--ui-surface);
+  border-color: var(--ui-line);
+}
+.btn-secondary:hover:not(:disabled) { background: var(--ui-panel); }
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:focus-visible,
+.field:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+
+/* ---------- Fields (input / select) ---------- */
+.field {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--ui-h);
+  padding: 0 12px;
+  color: var(--ui-ink);
+  background-color: var(--ui-input-bg);
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  font: inherit;
+  font-size: 15px;
+  color-scheme: light;          /* keeps native dropdown lists light */
+}
+.field::placeholder { color: #6f6a68; }
+
+/* index.css styles every <form> text input with !important (and a 4px radius, 16px font).
+   This rule is more specific, so inputs using .field keep the shared look. */
+form input.field[type="text"] {
+  background-color: var(--ui-input-bg) !important;
+  color: var(--ui-ink) !important;
+  border: 1px solid var(--ui-line) !important;
+  border-radius: var(--ui-radius);
+  font-size: 15px;
+}
+
+/* Multi-line field: same look, but height follows its content */
+textarea.field {
+  height: auto;
+  min-height: 96px;
+  padding: 10px 12px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+/* Hidden but still focusable and readable by screen readers */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Destructive actions (delete) */
+.btn-danger {
+  color: #fffaf5;
+  background: #a8362b;
+}
+.btn-danger:hover:not(:disabled) { background: #8f2c22; }

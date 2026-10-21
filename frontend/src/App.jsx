@@ -7,6 +7,7 @@ import AdminPanel from './AdminPanel';
 import ModerationPanel from './ModerationPanel';
 import PublicProfile from './PublicProfile';
 import api from './api';
+import './ui.css';
 
 const normalizeRole = (role) => {
   const value = String(role || '').toLowerCase();
@@ -111,21 +112,50 @@ function App() {
     }
   };
 
+  // Header navigation always leaves any open photo or public profile first.
+  // Without this, selectedPhotoId / selectedUsername keep priority and the clicked tab does nothing.
+  const navigateTo = (view) => {
+    setSelectedPhotoId(null);
+    setSelectedUsername(null);
+    setActiveView(view);
+  };
+
+  // Opening a profile from a photo page replaces the photo page.
+  const openProfile = (username) => {
+    setSelectedPhotoId(null);
+    setSelectedUsername(username);
+  };
+
+  const navClass = (view) => (activeView === view && !selectedPhotoId && !selectedUsername ? 'nav-button active' : 'nav-button');
+  const isStaff = ['admin', 'moderator'].includes(currentRole);
+
   return (
     <div>
       {isAuthenticated ? (
         <div>
           <div className="app-header">
-            <button className="brand-button" onClick={() => { setSelectedPhotoId(null); setSelectedUsername(null); setActiveView('feed'); }}>PhotoShare</button>
+            <button className="brand-button" onClick={() => navigateTo('feed')}>PhotoShare</button>
             <nav className="main-nav" aria-label="Main navigation">
-              <button className={activeView === 'feed' ? 'nav-button active' : 'nav-button'} onClick={() => { setSelectedPhotoId(null); setSelectedUsername(null); setActiveView('feed'); }}>Feed</button>
-              <button className={activeView === 'profile' ? 'nav-button active' : 'nav-button'} onClick={() => setActiveView('profile')}>Profile</button>
-              {['admin', 'moderator'].includes(currentRole) && <button className={activeView === 'admin' ? 'nav-button active' : 'nav-button'} onClick={() => setActiveView('admin')}>Management</button>}
-              {['admin', 'moderator'].includes(currentRole) && <button className={activeView === 'moderation' ? 'nav-button active' : 'nav-button'} onClick={() => setActiveView('moderation')}>Moderation</button>}
+              <button className={navClass('feed')} onClick={() => navigateTo('feed')}>Feed</button>
+              <button className={navClass('profile')} onClick={() => navigateTo('profile')}>Profile</button>
+              {isStaff && <button className={navClass('admin')} onClick={() => navigateTo('admin')}>Management</button>}
+              {isStaff && <button className={navClass('moderation')} onClick={() => navigateTo('moderation')}>Moderation</button>}
             </nav>
             <button className="logout-button" onClick={handleLogout}>Log out</button>
           </div>
-          {selectedPhotoId ? <PhotoPage photoId={selectedPhotoId} onBack={() => setSelectedPhotoId(null)} /> : selectedUsername ? <PublicProfile username={selectedUsername} onPhotoSelect={setSelectedPhotoId} onBack={() => setSelectedUsername(null)} /> : activeView === 'feed' ? <PhotoFeed onPhotoSelect={setSelectedPhotoId} onProfileSelect={setSelectedUsername} /> : activeView === 'profile' ? <Profile /> : activeView === 'admin' ? <AdminPanel currentRole={currentRole} /> : <ModerationPanel />}
+          {selectedPhotoId ? (
+            <PhotoPage photoId={selectedPhotoId} onBack={() => setSelectedPhotoId(null)} onProfileSelect={openProfile} />
+          ) : selectedUsername ? (
+            <PublicProfile username={selectedUsername} onPhotoSelect={setSelectedPhotoId} onBack={() => setSelectedUsername(null)} />
+          ) : activeView === 'feed' ? (
+            <PhotoFeed onPhotoSelect={setSelectedPhotoId} onProfileSelect={setSelectedUsername} />
+          ) : activeView === 'profile' ? (
+            <Profile onPhotoSelect={setSelectedPhotoId} />
+          ) : activeView === 'admin' ? (
+            <AdminPanel currentRole={currentRole} />
+          ) : (
+            <ModerationPanel />
+          )}
         </div>
       ) : (
         <Login onLoginSuccess={handleLoginSuccess} />
