@@ -112,6 +112,10 @@ function ModerationPanel({ onPhotoSelect }) {
     const [dialogError, setDialogError] = useState('');
     const [dialogMessage, setDialogMessage] = useState('');
     const [deletingId, setDeletingId] = useState(null);
+    const [comments, setComments] = useState(null); // null = still loading
+    const [editingCommentId, setEditingCommentId] = useState(null);
+    const [editingText, setEditingText] = useState('');
+    const [commentBusyId, setCommentBusyId] = useState(null);
 
     const debouncedKeyword = useDebouncedValue(keywordInput.trim());
     const selectedId = selectedPhoto?.id;
@@ -174,6 +178,20 @@ function ModerationPanel({ onPhotoSelect }) {
         return () => { ignore = true; };
     }, [selectedId]);
 
+    // Load the comments of the photo being reviewed.
+    useEffect(() => {
+        if (!selectedId) return undefined;
+        let ignore = false;
+        api.get(`/photos/${selectedId}/comments`)
+            .then((response) => { if (!ignore) setComments(response.data); })
+            .catch((err) => {
+                if (ignore) return;
+                setDialogError(getError(err, 'Could not load comments.'));
+                setComments([]);
+            });
+        return () => { ignore = true; };
+    }, [selectedId]);
+
     // Escape closes the dialog.
     useEffect(() => {
         if (!selectedId) return undefined;
@@ -196,6 +214,8 @@ function ModerationPanel({ onPhotoSelect }) {
     const openReview = (photo) => {
         setSelectedPhoto(photo);
         setRatings(null);
+        setComments(null);
+        setEditingCommentId(null);
         setDialogError('');
         setDialogMessage('');
     };
@@ -220,11 +240,45 @@ function ModerationPanel({ onPhotoSelect }) {
         }
     };
 
+    const handleSaveComment = async (commentId) => {
+        const text = editingText.trim();
+        if (!text) return;
+        try {
+            setCommentBusyId(commentId);
+            setDialogError('');
+            setDialogMessage('');
+            const response = await api.put(`/photos/comments/${commentId}`, { text });
+            setComments((items) => items.map((comment) => comment.id === commentId ? response.data : comment));
+            setEditingCommentId(null);
+            setDialogMessage('Comment updated.');
+        } catch (err) {
+            setDialogError(getError(err));
+        } finally {
+            setCommentBusyId(null);
+        }
+    };
+
+    const handleDeleteComment = async (commentId) => {
+        if (!window.confirm('Delete this comment?')) return;
+        try {
+            setCommentBusyId(commentId);
+            setDialogError('');
+            setDialogMessage('');
+            await api.delete(`/photos/comments/${commentId}`);
+            setComments((items) => items.filter((comment) => comment.id !== commentId));
+            setDialogMessage('Comment deleted.');
+        } catch (err) {
+            setDialogError(getError(err));
+        } finally {
+            setCommentBusyId(null);
+        }
+    };
+
     return (
         <main className="moderation-page">
             <header className="mo-header">
                 <h2>Image moderation</h2>
-                <p>Find a photo, review its ratings and remove abusive ones. Comments and photo deletion are on the photo page.</p>
+                <p>Find a photo, then review its comments and ratings. Photo details and deletion are on the photo page.</p>
             </header>
 
             <div className="mo-toolbar" role="search">
@@ -317,29 +371,70 @@ function ModerationPanel({ onPhotoSelect }) {
                             </div>
 
                             <div>
-                                <div className="mo-ratings-header">
-                                    <h4>Ratings</h4>
-                                    <span>{ratings ? `${ratings.length} total · average ${Number(selectedPhoto.average_rating || 0).toFixed(1)}` : ''}</span>
-                                </div>
-                                {ratings === null ? (
-                                    <div className="mo-empty" role="status">Loading ratings...</div>
-                                ) : ratings.length === 0 ? (
-                                    <div className="mo-empty">This photo has no ratings.</div>
-                                ) : (
-                                    <ul className="mo-rating-list">
-                                        {ratings.map((rating) => (
-                                            <li className="mo-rating-row" key={rating.id}>
-                                                <div>
-                                                    <strong className="mo-stars">★ {rating.rate} / 5</strong>
-                                                    <small>{rating.username ? `@${rating.username}` : `User #${rating.user_id}`}</small>
-                                                </div>
-                                                <button className="btn btn-secondary mo-btn-danger" type="button" onClick={() => handleDeleteRating(rating.id)} disabled={deletingId === rating.id}>
-                                                    {deletingId === rating.id ? 'Deleting...' : 'Delete'}
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
+                                <section className="mo-section">
+                                    <div className="mo-ratings-header">
+                                        <h4>Comments</h4>
+                                        <span>{comments ? `${comments.length} total` : ''}</span>
+                                    </div>
+                                    {comments === null ? (
+                                        <div className="mo-empty" role="status">Loading comments...</div>
+                                    ) : comments.length === 0 ? (
+                                        <div className="mo-empty">This photo has no comments.</div>
+                                    ) : (
+                                        <ul className="mo-rating-list">
+                                            {comments.map((comment) => (
+                                                <li className="mo-comment" key={comment.id}>
+                                                    <small className="mo-muted">
+                                                        <strong>{comment.username ? `@${comment.username}` : `User #${comment.user_id}`}</strong> · {formatDate(comment.created_at)}
+                                                    </small>
+                                                    {editingCommentId === comment.id ? (
+                                                        <>
+                                                            <textarea className="field" aria-label="Edit comment" value={editingText} onChange={(event) => setEditingText(event.target.value)} maxLength="500" rows="3" />
+                                                            <div className="mo-comment__actions">
+                                                                <button className="btn btn-secondary" type="button" onClick={() => setEditingCommentId(null)} disabled={commentBusyId === comment.id}>Cancel</button>
+                                                                <button className="btn btn-primary" type="button" onClick={() => handleSaveComment(comment.id)} disabled={commentBusyId === comment.id || !editingText.trim()}>Save</button>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <p>{comment.text}</p>
+                                                            <div className="mo-comment__actions">
+                                                                <button className="btn btn-secondary" type="button" onClick={() => { setEditingCommentId(comment.id); setEditingText(comment.text); }} disabled={commentBusyId === comment.id}>Edit</button>
+                                                                <button className="btn btn-secondary mo-btn-danger" type="button" onClick={() => handleDeleteComment(comment.id)} disabled={commentBusyId === comment.id}>Delete</button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </section>
+
+                                <section className="mo-section">
+                                    <div className="mo-ratings-header">
+                                        <h4>Ratings</h4>
+                                        <span>{ratings ? `${ratings.length} total · average ${Number(selectedPhoto.average_rating || 0).toFixed(1)}` : ''}</span>
+                                    </div>
+                                    {ratings === null ? (
+                                        <div className="mo-empty" role="status">Loading ratings...</div>
+                                    ) : ratings.length === 0 ? (
+                                        <div className="mo-empty">This photo has no ratings.</div>
+                                    ) : (
+                                        <ul className="mo-rating-list">
+                                            {ratings.map((rating) => (
+                                                <li className="mo-rating-row" key={rating.id}>
+                                                    <div>
+                                                        <strong className="mo-stars">★ {rating.rate} / 5</strong>
+                                                        <small>{rating.username ? `@${rating.username}` : `User #${rating.user_id}`}</small>
+                                                    </div>
+                                                    <button className="btn btn-secondary mo-btn-danger" type="button" onClick={() => handleDeleteRating(rating.id)} disabled={deletingId === rating.id}>
+                                                        {deletingId === rating.id ? 'Deleting...' : 'Delete'}
+                                                    </button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </section>
                             </div>
                         </div>
 

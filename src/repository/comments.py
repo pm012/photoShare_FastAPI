@@ -1,5 +1,5 @@
 from typing import Optional, List
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from src.database.models import Comment
 from src.schemas.comments import CommentModel
 
@@ -18,7 +18,7 @@ def get_comment_by_id(comment_id: int, db: Session) -> Optional[Comment]:
     return db.query(Comment).filter(Comment.id == comment_id).first()
 
 def get_comments_by_photo(photo_id: int, db: Session) -> List[Comment]:
-    return db.query(Comment).filter(Comment.photo_id == photo_id).all()
+    return db.query(Comment).options(joinedload(Comment.user)).filter(Comment.photo_id == photo_id).all()
 
 def update_comment(comment_id: int, body: CommentModel, db: Session) -> Optional[Comment]:
     comment = get_comment_by_id(comment_id, db)

@@ -54,6 +54,15 @@ class Photo(Base):
     ratings = relationship("Rating", back_populates="photo", cascade="all, delete-orphan")
     transformations = relationship("PhotoTransformation", back_populates="photo", cascade="all, delete-orphan")
 
+    # Read-only helpers for the API responses (not database columns)
+    @property
+    def username(self):
+        return self.user.username if self.user else None
+
+    @property
+    def avatar_url(self):
+        return self.user.avatar_url if self.user else None
+
 
 class Tag(Base):
     __tablename__ = "tags"
@@ -76,6 +85,15 @@ class Comment(Base):
 
     photo = relationship("Photo", back_populates="comments")
     user = relationship("User", back_populates="comments")
+
+    # Read-only helpers for the API responses (not database columns)
+    @property
+    def username(self):
+        return self.user.username if self.user else None
+
+    @property
+    def avatar_url(self):
+        return self.user.avatar_url if self.user else None
 
 
 class PhotoTransformation(Base):
@@ -100,6 +118,11 @@ class Rating(Base):
 
     photo = relationship("Photo", back_populates="ratings")
     user = relationship("User", back_populates="ratings")
+
+    # Read-only helper for the API responses (not a database column)
+    @property
+    def username(self):
+        return self.user.username if self.user else None
 
     # Складений унікальний індекс: один користувач може поставити лише 1 оцінку конкретній світлині
     __table_args__ = (

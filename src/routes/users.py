@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Request, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from src.services.image_validation import validate_image_upload
+from src.conf.config import settings
 
 from src.database.db import get_db
 from src.database.models import User, UserRole
@@ -57,6 +59,8 @@ async def upload_avatar(
 
     # Upload the image to Cloudinary and get the HTTPS URL
     avatar_url = await save_avatar_to_cloudinary(file, current_user.id)
+    await validate_image_upload(file, settings.MAX_AVATAR_SIZE_BYTES)
+    avatar_url = await save_avatar_to_cloudinary(file, current_user.id)
     
     # Update the avatar_url field in the database for the current user
     current_user.avatar_url = avatar_url
@@ -101,17 +105,19 @@ def get_user_public_profile(username: str, db: Session = Depends(get_db), curren
 
 
 @router.get("/{username}/photos", response_model=list[PhotoSearchResponse])
-def get_user_public_photos(username: str, db: Session = Depends(get_db), current_user: User = Depends(allowed_all)):
+def get_user_public_photos(
+    username: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(allowed_all),
+):
     user = repository_users.get_user_by_username(username, db)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return repository_photos.search_photos(
-        query_str=None,
-        tag_name=None,
-        sort_by="date",
-        order="desc",
-        db=db,
-        user_id=user.id,
+        query_str=None, tag_name=None, sort_by="date", order="desc",
+        db=db, user_id=user.id, page=page, page_size=page_size,
     )
 
 

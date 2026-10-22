@@ -6,8 +6,9 @@ from src.database.models import Rating, Photo, Tag, User, photo_m2m_tag
 from src.schemas.photos import PhotoUpdateDescription
 
 def process_tags(tags_list: List[str], db: Session) -> List[Tag]:
-    # BRD: Limit up to 5 tags per photo
-    if len(tags_list) > 5:
+    # BRD: Limit up to 5 tags per photo (duplicates such as "Sunset, sunset" count once)
+    unique_names = {name.strip().lower() for name in tags_list if name and name.strip()}
+    if len(unique_names) > 5:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You can add a maximum of 5 tags to a photo."
@@ -17,6 +18,9 @@ def process_tags(tags_list: List[str], db: Session) -> List[Tag]:
     for tag_name in tags_list:
         tag_name = tag_name.strip().lower()
         if not tag_name:
+            continue
+        # Skip a tag that is already in this list (e.g. "Sunset, sunset")
+        if any(existing.name == tag_name for existing in db_tags):
             continue
         # Searching if there is such global tag
         tag = db.query(Tag).filter(Tag.name == tag_name).first()
@@ -60,7 +64,13 @@ def update_photo_description(photo_id: int, body: PhotoUpdateDescription, curren
             detail="You do not have permission to edit this photo description."
         )
         
-    photo.description = body.description
+    # Validate the tags first, so a rejected request leaves the photo untouched.
+    # Only the fields that were sent are changed.
+    new_tags = process_tags(body.tags, db) if body.tags is not None else None
+    if body.description is not None:
+        photo.description = body.description
+    if new_tags is not None:
+        photo.tags = new_tags
     db.commit()
     db.refresh(photo)
     return photo

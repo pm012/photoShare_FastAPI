@@ -4,6 +4,15 @@ import UserAvatar from './UserAvatar';
 import './PhotoPage.css';
 
 const STAFF_ROLES = ['admin', 'moderator'];
+const MAX_TAGS = 5;
+
+// "a, b, A" -> ["a", "b"] (trimmed, empty and duplicate tags removed)
+const parseTags = (value) => value
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .filter((tag, index, allTags) => allTags.findIndex((item) => item.toLowerCase() === tag.toLowerCase()) === index);
+const tagsToText = (tags) => (tags || []).map((tag) => tag.name).join(', ');
 
 // Same normalisation as in App.jsx ("UserRole.ADMIN" -> "admin").
 const normalizeRole = (role) => {
@@ -27,6 +36,7 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
     const [editingCommentId, setEditingCommentId] = useState(null);
     const [editingText, setEditingText] = useState('');
     const [description, setDescription] = useState('');
+    const [tagsText, setTagsText] = useState('');
     const [isEditingDescription, setIsEditingDescription] = useState(false);
     const [preset, setPreset] = useState('thumbnail');
     const [transformation, setTransformation] = useState(null);
@@ -49,6 +59,7 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
             ]);
             setPhoto(photoResponse.data);
             setDescription(photoResponse.data.description || '');
+            setTagsText(tagsToText(photoResponse.data.tags));
             setCurrentUser(userResponse.data);
             setComments(commentsResponse.data);
             setRating(ratingResponse.data);
@@ -125,12 +136,24 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
         }, `You rated this photo ${value} out of 5.`);
     };
 
-    const handleDescriptionSave = async () => {
+    const handleDetailsSave = async () => {
+        const tags = parseTags(tagsText);
+        if (tags.length > MAX_TAGS) {
+            setError(`You can add up to ${MAX_TAGS} unique tags.`);
+            return;
+        }
         await runAction(async () => {
-            const response = await api.put(`/photos/${photoId}`, { description });
-            setPhoto((current) => ({ ...current, description: response.data.description }));
+            const response = await api.put(`/photos/${photoId}`, { description, tags });
+            setPhoto((current) => ({ ...current, description: response.data.description, tags: response.data.tags }));
+            setTagsText(tagsToText(response.data.tags));
             setIsEditingDescription(false);
-        }, 'Description updated.');
+        }, 'Photo details updated.');
+    };
+
+    const cancelDetailsEdit = () => {
+        setDescription(photo.description || '');
+        setTagsText(tagsToText(photo.tags));
+        setIsEditingDescription(false);
     };
 
     const handleDeletePhoto = async () => {
@@ -149,14 +172,18 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
         }, 'Transformed photo created.');
     };
 
-    const backButton = <button className="btn btn-secondary pd-back" type="button" onClick={onBack}>← Back to Gallery</button>;
+    const backButton = <button className="btn btn-secondary pd-back" type="button" onClick={onBack}>← Back to feed</button>;
 
     if (loading) return <main className="photo-page"><div className="feed-status" role="status">Loading photo...</div></main>;
     if (error && !photo) return <main className="photo-page">{backButton}<p className="error-message" role="alert">{error}</p></main>;
 
     const isStaff = STAFF_ROLES.includes(normalizeRole(currentUser.role));
     const isOwner = currentUser.id === photo.user_id;
-    const canManagePhoto = isOwner || isStaff;
+    const isAdmin = normalizeRole(currentUser.role) === 'admin';
+    // The backend lets only the owner or an administrator edit or delete a photo.
+    const canManagePhoto = isOwner || isAdmin;
+    const parsedTags = parseTags(tagsText);
+    const tooManyTags = parsedTags.length > MAX_TAGS;
     const canRate = !isOwner;
     // The API does not return usernames for photos/comments yet, so for the current user's own content use /users/me.
     const authorName = photo.username || (isOwner ? currentUser.username : null);
@@ -225,18 +252,28 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
 
                     {canManagePhoto && (
                         <section className="pd-card">
-                            <h3>Manage Photo</h3>
+                            <h3>Manage photo</h3>
                             {isEditingDescription ? (
                                 <>
-                                    <textarea className="field" aria-label="Photo description" value={description} onChange={(event) => setDescription(event.target.value)} rows="3" />
+                                    <label className="pd-field">
+                                        <span className="pd-field__label">Description</span>
+                                        <textarea className="field" value={description} onChange={(event) => setDescription(event.target.value)} rows="3" />
+                                    </label>
+                                    <label className="pd-field">
+                                        <span className="pd-field__label">Tags</span>
+                                        <input className="field" type="text" placeholder="nature, sunset, travel" autoComplete="off" value={tagsText} onChange={(event) => setTagsText(event.target.value)} aria-invalid={tooManyTags} />
+                                        <span className={tooManyTags ? 'pd-hint is-error' : 'pd-hint'}>
+                                            {tooManyTags ? `Remove ${parsedTags.length - MAX_TAGS} tag(s) to save` : 'Separate tags with commas'} · {parsedTags.length}/{MAX_TAGS}
+                                        </span>
+                                    </label>
                                     <div className="pd-actions">
-                                        <button className="btn btn-secondary" type="button" onClick={() => { setDescription(photo.description || ''); setIsEditingDescription(false); }} disabled={submitting}>Cancel</button>
-                                        <button className="btn btn-primary" type="button" onClick={handleDescriptionSave} disabled={submitting}>Save</button>
+                                        <button className="btn btn-secondary" type="button" onClick={cancelDetailsEdit} disabled={submitting}>Cancel</button>
+                                        <button className="btn btn-primary" type="button" onClick={handleDetailsSave} disabled={submitting || tooManyTags}>Save</button>
                                     </div>
                                 </>
                             ) : (
                                 <div className="pd-actions">
-                                    <button className="btn btn-secondary" type="button" onClick={() => setIsEditingDescription(true)}>Edit Description</button>                                    
+                                    <button className="btn btn-secondary" type="button" onClick={() => setIsEditingDescription(true)}>Edit details</button>
                                     <button className="btn btn-danger" type="button" onClick={handleDeletePhoto} disabled={submitting}>Delete</button>
                                 </div>
                             )}

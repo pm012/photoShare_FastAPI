@@ -156,6 +156,13 @@
 .mo-rating-row .mo-btn-danger { color: #9e2f24; border-color: #e4aaa0; }
 .mo-empty { padding: 28px 16px; color: var(--ui-muted); text-align: center; background: var(--ui-panel); border-radius: 8px; }
 
+.mo-section + .mo-section { margin-top: 24px; }
+.mo-comment { display: grid; gap: 8px; padding: 12px; border-top: 1px solid var(--ui-line-soft); }
+.mo-comment:first-child { border-top: 0; }
+.mo-comment p { margin: 0; color: var(--ui-ink); overflow-wrap: anywhere; white-space: pre-wrap; }
+.mo-comment__actions { display: flex; gap: 8px; }
+.mo-comment .mo-btn-danger,
+.mo-rating-row .mo-btn-danger { color: #9e2f24; border-color: #e4aaa0; }
 .mo-dialog .modal-actions { margin-top: 24px; }
 
 @media (max-width: 900px) {

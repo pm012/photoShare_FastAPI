@@ -95,6 +95,11 @@
 .pd-star:disabled { cursor: default; }
 .pd-star:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 1px; }
 .pd-hint { margin: 0; color: var(--ui-muted); font-size: 13px; }
+.pd-hint.is-error { color: #9e2f24; }
+
+/* Labelled form field inside a card */
+.pd-field { display: grid; gap: 6px; color: var(--ui-ink); }
+.pd-field__label { font-size: 14px; font-weight: 700; }
 
 /* ---------- Actions and forms inside cards ---------- */
 .pd-actions { display: flex; flex-wrap: wrap; gap: 10px; }

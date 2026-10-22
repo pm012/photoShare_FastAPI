@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 #   Scheme for creating or editing a comment
@@ -10,6 +11,8 @@ class CommentResponse(BaseModel):
     id: int
     photo_id: int
     user_id: int
+    username: Optional[str] = None
+    avatar_url: Optional[str] = None
     text: str
     created_at: datetime
     updated_at: datetime

@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from src.database.models import UserRole
 from typing import Optional
 
@@ -26,7 +26,7 @@ class UserMeResponse(BaseModel):
 
 # Scheme for editing the user's own profile
 class UserUpdateModel(BaseModel):
-    username: str
+    username: str = Field(min_length=3, max_length=50, pattern=r"^[A-Za-z0-9_.-]+$")
     avatar_url: Optional[str] = None
 
 # Scheme for editing the role of a non-admin user by an admin

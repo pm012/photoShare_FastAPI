@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 # Scheme for creating a rating
@@ -9,6 +10,7 @@ class RatingResponse(BaseModel):
     id: int
     photo_id: int
     user_id: int
+    username: Optional[str] = None   # taken from Rating.username (see models.py)
     rate: int
 
     model_config = ConfigDict(from_attributes=True)
