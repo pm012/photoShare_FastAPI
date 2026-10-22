@@ -82,7 +82,9 @@
 
 /* index.css styles every <form> text input with !important (and a 4px radius, 16px font).
    This rule is more specific, so inputs using .field keep the shared look. */
-form input.field[type="text"] {
+form input.field[type="text"],
+form input.field[type="email"],
+form input.field[type="password"]  {
   background-color: var(--ui-input-bg) !important;
   color: var(--ui-ink) !important;
   border: 1px solid var(--ui-line) !important;

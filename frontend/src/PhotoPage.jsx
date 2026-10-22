@@ -149,7 +149,7 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
         }, 'Transformed photo created.');
     };
 
-    const backButton = <button className="btn btn-secondary pd-back" type="button" onClick={onBack}>← Back to feed</button>;
+    const backButton = <button className="btn btn-secondary pd-back" type="button" onClick={onBack}>← Back to Gallery</button>;
 
     if (loading) return <main className="photo-page"><div className="feed-status" role="status">Loading photo...</div></main>;
     if (error && !photo) return <main className="photo-page">{backButton}<p className="error-message" role="alert">{error}</p></main>;
@@ -225,7 +225,7 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
 
                     {canManagePhoto && (
                         <section className="pd-card">
-                            <h3>Manage photo</h3>
+                            <h3>Manage Photo</h3>
                             {isEditingDescription ? (
                                 <>
                                     <textarea className="field" aria-label="Photo description" value={description} onChange={(event) => setDescription(event.target.value)} rows="3" />
@@ -236,7 +236,7 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
                                 </>
                             ) : (
                                 <div className="pd-actions">
-                                    <button className="btn btn-secondary" type="button" onClick={() => setIsEditingDescription(true)}>Edit description</button>
+                                    <button className="btn btn-secondary" type="button" onClick={() => setIsEditingDescription(true)}>Edit Description</button>                                    
                                     <button className="btn btn-danger" type="button" onClick={handleDeletePhoto} disabled={submitting}>Delete</button>
                                 </div>
                             )}

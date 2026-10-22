@@ -1,0 +1,56 @@
+/* ==========================================================
+   AdminPanel.css - user management. Depends on ui.css.
+   Class names start with "ad-".
+   ========================================================== */
+
+.ad-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
+.ad-header h2 { margin: 0 0 6px; color: var(--ui-ink); font-size: clamp(28px, 4vw, 40px); letter-spacing: -1px; }
+.ad-header p { margin: 0; color: var(--ui-muted); }
+.ad-badge { padding: 6px 12px; color: #9e2f24; background: #fbe9e5; border: 1px solid #e4aaa0; border-radius: 999px; font-size: 13px; font-weight: 800; white-space: nowrap; }
+
+/* ---------- Search ---------- */
+.ad-search { display: flex; gap: 10px; padding: 14px; margin-bottom: 24px; background: var(--ui-panel); border: 1px solid var(--ui-line-soft); border-radius: 8px; }
+.ad-search .field { flex: 1; width: auto; min-width: 0; }
+
+/* ---------- Table ---------- */
+.ad-section-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.ad-section-header h3 { margin: 0; color: var(--ui-ink); font-size: 24px; }
+.ad-section-header span { color: var(--ui-muted); font-size: 14px; }
+
+.ad-table-wrap { overflow-x: auto; background: var(--ui-surface); border: 1px solid var(--ui-line-soft); border-radius: 8px; transition: opacity 150ms ease; }
+.ad-table-wrap[aria-busy="true"] { opacity: 0.55; }
+
+.ad-table { width: 100%; min-width: 780px; border-collapse: collapse; text-align: left; }
+.ad-table th {
+  padding: 12px 16px;
+  color: var(--ui-muted);
+  background: var(--ui-panel);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ad-table td { padding: 12px 16px; color: var(--ui-ink); border-top: 1px solid var(--ui-line-soft); font-size: 14px; vertical-align: middle; }
+
+/* The flex layout lives on a div INSIDE the cell, so the cell stays a real table cell */
+.ad-user { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.ad-user__text { display: grid; min-width: 0; }
+.ad-user__text strong { font-size: 15px; overflow-wrap: anywhere; }
+.ad-user__text span { color: var(--ui-muted); font-size: 13px; overflow-wrap: anywhere; }
+
+.ad-role { font-weight: 700; }
+.ad-table .ad-role-select { width: 150px; }
+
+.ad-status { display: inline-flex; align-items: center; padding: 3px 10px; color: #9e2f24; background: #fbe9e5; border-radius: 999px; font-size: 13px; font-weight: 700; }
+.ad-status.is-active { color: #276340; background: #e8f4eb; }
+
+.ad-actions { display: flex; gap: 8px; }
+.ad-actions .ad-btn-danger { color: #9e2f24; border-color: #e4aaa0; }
+
+.ad-pagination { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 24px; color: var(--ui-muted); }
+
+@media (max-width: 680px) {
+  .ad-header { flex-direction: column; gap: 14px; }
+  .ad-search { flex-direction: column; }
+}

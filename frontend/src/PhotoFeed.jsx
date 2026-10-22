@@ -194,11 +194,11 @@ function PhotoFeed({ onPhotoSelect, onProfileSelect }) {
         <main className="feed-page">
             <header className="feed-header">
                 <div>
-                    <h2>Photo feed</h2>
-                    <p className="feed-subtitle">Ideas, moments, and stories from the community.</p>
+                    <h2>Photo Gallery</h2>
+                    <p className="feed-subtitle">Bright ideas, moments, and stories from the PhotoShare community.</p>
                 </div>
                 <button className="btn btn-primary" type="button" onClick={() => setIsUploadOpen(true)}>
-                    <span aria-hidden="true">+</span> Upload photo
+                    <span aria-hidden="true">+</span> Upload Photo
                 </button>
             </header>
 
@@ -265,12 +265,12 @@ function PhotoFeed({ onPhotoSelect, onProfileSelect }) {
                         ) : hasActiveFilters ? (
                             <>
                                 <p>No photos match your search.</p>
-                                <button className="btn btn-secondary" type="button" onClick={handleReset}>Reset filters</button>
+                                <button className="btn btn-secondary" type="button" onClick={handleReset}>Reset Filters</button>
                             </>
                         ) : (
                             <>
                                 <p>No photos yet. Be the first to upload one.</p>
-                                <button className="btn btn-primary" type="button" onClick={() => setIsUploadOpen(true)}>Upload photo</button>
+                                <button className="btn btn-primary" type="button" onClick={() => setIsUploadOpen(true)}>Upload Photo</button>
                             </>
                         )}
                     </div>

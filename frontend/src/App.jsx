@@ -136,11 +136,11 @@ function App() {
           <div className="app-header">
             <button className="brand-button" onClick={() => navigateTo('feed')}>PhotoShare</button>
             <nav className="main-nav" aria-label="Main navigation">
-              <button className={navClass('feed')} onClick={() => navigateTo('feed')}>Feed</button>
-              <button className={navClass('profile')} onClick={() => navigateTo('profile')}>Profile</button>
-              {isStaff && <button className={navClass('admin')} onClick={() => navigateTo('admin')}>Management</button>}
-              {isStaff && <button className={navClass('moderation')} onClick={() => navigateTo('moderation')}>Moderation</button>}
-            </nav>
+              <button className={navClass('feed')} onClick={() => navigateTo('feed')}>Photo Gallery</button>              
+              {isStaff && <button className={navClass('admin')} onClick={() => navigateTo('admin')}>User Management</button>}
+              {isStaff && <button className={navClass('moderation')} onClick={() => navigateTo('moderation')}>Images Moderation</button>}
+            </nav>            
+            <button className={navClass('profile')} onClick={() => navigateTo('profile')}>My Profile Management</button>
             <button className="logout-button" onClick={handleLogout}>Log out</button>
           </div>
           {selectedPhotoId ? (

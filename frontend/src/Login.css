@@ -1,0 +1,70 @@
+/* ==========================================================
+   Login.css - sign in / sign up / password recovery. Depends on ui.css.
+   Class names start with "lg-".
+   ========================================================== */
+
+.lg-page {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-height: 100svh;
+  padding: 24px 16px;
+}
+
+.lg-card {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 420px;
+  padding: 32px;
+  text-align: left;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-line-soft);
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgba(73, 47, 35, 0.12);
+}
+
+.lg-brand { margin: 0 0 20px; color: var(--ui-ink); font: 800 22px/1 var(--sans); letter-spacing: -0.8px; }
+.lg-title { margin: 0 0 6px; color: var(--ui-ink); font-size: 28px; letter-spacing: -0.5px; line-height: 1.2; }
+.lg-subtitle { margin: 0 0 24px; color: var(--ui-muted); font-size: 15px; }
+
+.lg-form { display: grid; gap: 16px; }
+.lg-field { display: grid; gap: 6px; }
+.lg-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.lg-label { color: var(--ui-ink); font-size: 14px; font-weight: 700; }
+.lg-hint { color: var(--ui-muted); font-size: 13px; }
+.lg-hint.is-error { color: #9e2f24; }
+
+/* Password field with a Show/Hide toggle inside it */
+.lg-password { position: relative; }
+.lg-password .field { padding-right: 68px; }
+.lg-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  padding: 6px 8px;
+  color: var(--ui-accent);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  transform: translateY(-50%);
+}
+.lg-toggle:focus-visible,
+.lg-link:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+
+.lg-link { padding: 0; color: var(--ui-accent); background: none; border: 0; cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; }
+.lg-link:hover { text-decoration: underline; }
+
+.lg-card .btn-primary { width: 100%; margin-top: 4px; }
+.lg-card .error-message,
+.lg-card .success-message { margin: 0 0 16px; }
+
+.lg-footer { display: grid; gap: 10px; margin-top: 22px; color: var(--ui-muted); font-size: 14px; text-align: center; }
+.lg-footer p { margin: 0; }
+
+@media (max-width: 480px) {
+  .lg-card { padding: 24px 20px; }
+}
