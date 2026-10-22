@@ -154,7 +154,7 @@ function App() {
           ) : activeView === 'admin' ? (
             <AdminPanel currentRole={currentRole} />
           ) : (
-            <ModerationPanel />
+            <ModerationPanel onPhotoSelect={setSelectedPhotoId} />
           )}
         </div>
       ) : (

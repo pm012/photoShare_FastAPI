@@ -1,0 +1,168 @@
+/* ==========================================================
+   ModerationPanel.css - photo moderation queue + review dialog.
+   Depends on ui.css. Class names start with "mo-".
+   (.modal-backdrop and .modal-heading still come from App.css.)
+   ========================================================== */
+
+.mo-header { margin-bottom: 28px; }
+.mo-header h2 { margin: 0 0 6px; color: var(--ui-ink); font-size: clamp(28px, 4vw, 40px); letter-spacing: -1px; }
+.mo-header p { margin: 0; color: var(--ui-muted); }
+
+/* ---------- Filters ---------- */
+.mo-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 190px auto;
+  gap: 10px;
+  padding: 14px;
+  margin-bottom: 24px;
+  background: var(--ui-panel);
+  border: 1px solid var(--ui-line-soft);
+  border-radius: 8px;
+}
+
+.mo-picker { position: relative; min-width: 0; }
+.mo-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  height: var(--ui-h);
+  padding: 0 6px 0 10px;
+  color: var(--ui-ink);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  font-size: 15px;
+  font-weight: 700;
+}
+.mo-chip__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mo-chip__clear {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--ui-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+}
+.mo-chip__clear:hover { color: var(--ui-ink); background: var(--ui-panel); }
+.mo-chip__clear:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 1px; }
+
+.mo-suggestions {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  max-height: 320px;
+  padding: 4px;
+  margin: 0;
+  overflow: auto;
+  list-style: none;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-line);
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(73, 47, 35, 0.18);
+}
+.mo-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 10px;
+  color: var(--ui-ink);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+}
+.mo-suggestion:hover,
+.mo-suggestion:focus-visible { background: var(--ui-panel); outline: none; }
+.mo-suggestion__text { display: grid; min-width: 0; }
+.mo-suggestion__text strong { font-size: 14px; }
+.mo-suggestion__text span { overflow: hidden; color: var(--ui-muted); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.mo-suggestions__empty { padding: 12px; color: var(--ui-muted); font-size: 14px; }
+
+/* ---------- Table ---------- */
+.mo-section-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.mo-section-header h3 { margin: 0; color: var(--ui-ink); font-size: 24px; }
+.mo-section-header span { color: var(--ui-muted); font-size: 14px; }
+
+.mo-table-wrap { overflow-x: auto; background: var(--ui-surface); border: 1px solid var(--ui-line-soft); border-radius: 8px; transition: opacity 150ms ease; }
+.mo-table-wrap[aria-busy="true"] { opacity: 0.55; }
+.mo-table { width: 100%; min-width: 760px; border-collapse: collapse; text-align: left; }
+.mo-table th {
+  padding: 12px 16px;
+  color: var(--ui-muted);
+  background: var(--ui-panel);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.mo-table td { padding: 12px 16px; color: var(--ui-ink); border-top: 1px solid var(--ui-line-soft); font-size: 14px; vertical-align: middle; }
+
+.mo-photo { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.mo-thumb { flex: none; width: 72px; height: 54px; object-fit: cover; background: #e7ddd4; border-radius: 4px; }
+.mo-desc {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  max-width: 320px;
+}
+.mo-desc.is-empty { color: var(--ui-muted); font-style: italic; }
+.mo-creator { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mo-stars { color: #c64c32; font-weight: 800; }
+.mo-muted { color: var(--ui-muted); }
+
+.mo-pagination { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 24px; color: var(--ui-muted); }
+
+/* ---------- Review dialog ---------- */
+.mo-dialog {
+  box-sizing: border-box;
+  width: min(780px, 100%);
+  max-height: 92vh;
+  padding: 28px;
+  overflow-y: auto;
+  text-align: left;
+  background: var(--ui-surface);
+  box-shadow: 0 24px 70px rgba(24, 17, 14, 0.3);
+}
+.mo-dialog__body { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 24px; }
+.mo-preview { display: block; width: 100%; max-height: 240px; object-fit: contain; background: var(--ui-panel); border-radius: 6px; }
+.mo-meta { display: grid; gap: 8px; margin-top: 12px; font-size: 14px; }
+.mo-meta p { margin: 0; overflow-wrap: anywhere; }
+
+.mo-ratings-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+.mo-ratings-header h4 { margin: 0; color: var(--ui-ink); font-size: 18px; }
+.mo-ratings-header span { color: var(--ui-muted); font-size: 14px; }
+
+.mo-rating-list { display: grid; margin: 0; padding: 0; overflow: hidden; list-style: none; border: 1px solid var(--ui-line-soft); border-radius: 8px; }
+.mo-rating-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-top: 1px solid var(--ui-line-soft); }
+.mo-rating-row:first-child { border-top: 0; }
+.mo-rating-row div { display: grid; }
+.mo-rating-row small { color: var(--ui-muted); }
+.mo-rating-row .mo-btn-danger { color: #9e2f24; border-color: #e4aaa0; }
+.mo-empty { padding: 28px 16px; color: var(--ui-muted); text-align: center; background: var(--ui-panel); border-radius: 8px; }
+
+.mo-dialog .modal-actions { margin-top: 24px; }
+
+@media (max-width: 900px) {
+  .mo-toolbar { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 680px) {
+  .mo-toolbar { grid-template-columns: 1fr; }
+  .mo-dialog { padding: 20px; }
+  .mo-dialog__body { grid-template-columns: 1fr; }
+}
