@@ -277,7 +277,7 @@ function ModerationPanel({ onPhotoSelect }) {
     return (
         <main className="moderation-page">
             <header className="mo-header">
-                <h2>Image moderation</h2>
+                <h2>Image Moderation</h2>
                 <p>Find a photo, then review its comments and ratings. Photo details and deletion are on the photo page.</p>
             </header>
 
