@@ -32,7 +32,7 @@ jobs:
     - name: Install dependencies
       run: |
         poetry run pip install --upgrade pip
-        poetry install --no-interaction
+        poetry install --with dev --no-interaction
 
     - name: Run Pytest
       env:
