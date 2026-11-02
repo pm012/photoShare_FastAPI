@@ -27,13 +27,13 @@ jobs:
         virtualenvs-in-project: true
 
     - name: Force Lock Synchronization
-      # This forces poetry inside the runner to normalize the lock file 
-      # structure to exactly match its current version rules.
       run: poetry lock
 
     - name: Install dependencies
-      # Targets your main code and development groups explicitly
-      run: poetry install --no-interaction --only main,dev
+        # Standard poetry install automatically includes all dependency groups
+      run: |
+        poetry run pip install --upgrade pip
+        poetry install --no-interaction
 
     - name: Run Pytest
       env:
