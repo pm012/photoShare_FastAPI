@@ -17,28 +17,24 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.14' # matches pyen python version in pyproject.toml
+        python-version: '3.14'
 
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:
-        version: '2.0.1' # Installs Poetry 2.0+ 
+        version: '2.0.1'
         virtualenvs-create: true
         virtualenvs-in-project: true
 
-    - name: Load cached venv
-      id: cached-poetry-dependencies
-      uses: actions/cache@v4
-      with:
-        path: .venv
-        key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+    - name: Force Lock Synchronization
+      # This forces poetry inside the runner to normalize the lock file 
+      # structure to exactly match its current version rules.
+      run: poetry lock
 
     - name: Install dependencies
-      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install --no-interaction --no-root
+      run: poetry install --no-interaction
 
     - name: Run Pytest
-      # Sets environment context if your source code relies on specific paths
       env:
         PYTHONPATH: .
       run: poetry run pytest -v
