@@ -40,5 +40,5 @@ jobs:
     - name: Run Pytest
       # Sets environment context if your source code relies on specific paths
       env:
-        PYTHONPATH: src
+        PYTHONPATH: .
       run: poetry run pytest -v
