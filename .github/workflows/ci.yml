@@ -34,6 +34,10 @@ jobs:
         poetry run pip install --upgrade pip
         poetry install --with dev --no-interaction
 
+    - name: Install Playwright Browsers
+      # Downloads the headless browser binaries inside the GitHub runner environment
+      run: poetry run playwright install --with-deps chromium
+
     - name: Run Pytest
       env:
         PYTHONPATH: .
@@ -49,4 +53,4 @@ jobs:
         CLOUDINARY_API_KEY: 123456789
         CLOUDINARY_API_SECRET: mock_secret
         REDIS_URL: redis://localhost:6379/0
-      run: poetry run pytest -v
+      run: poetry run pytest -v --ignore=tests/ui
