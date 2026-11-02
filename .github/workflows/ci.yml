@@ -38,4 +38,5 @@ jobs:
     - name: Run Pytest
       env:
         PYTHONPATH: .
+      # Explicitly triggers the pytest binary built inside your poetry environment
       run: poetry run pytest -v
