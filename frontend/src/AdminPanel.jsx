@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import api from './api';
+import api from './js/api';
 import UserAvatar from './UserAvatar';
-import './AdminPanel.css';
+import './css/AdminPanel.css';
 
 const PAGE_SIZE = 20;
 

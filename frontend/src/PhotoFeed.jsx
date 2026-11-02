@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import UploadPhoto from './UploadPhoto';
-import api from './api';
+import api from './js/api';
 import UserAvatar from './UserAvatar';
-import './PhotoFeed.css';
+import './css/PhotoFeed.css';
 
 const PAGE_SIZE = 20;
 const MAX_VISIBLE_TAGS = 3;

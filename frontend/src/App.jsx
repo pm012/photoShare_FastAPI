@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import './ui.css'; // keep first: component CSS files below can then override it
+import './css/ui.css'; // keep first: component CSS files below can then override it
 import Login from './Login';
 import PhotoFeed from './PhotoFeed';
 import Profile from './Profile';
@@ -7,7 +7,7 @@ import PhotoPage from './PhotoPage';
 import AdminPanel from './AdminPanel';
 import ModerationPanel from './ModerationPanel';
 import PublicProfile from './PublicProfile';
-import api from './api';
+import api from './js/api';
 
 const normalizeRole = (role) => {
   const value = String(role || '').toLowerCase();

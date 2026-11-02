@@ -57,8 +57,6 @@ async def upload_avatar(
     # But if you want to be extra safe and forcibly delete the old public_id:
     # delete_avatar_from_cloudinary(current_user.id)
 
-    # Upload the image to Cloudinary and get the HTTPS URL
-    avatar_url = await save_avatar_to_cloudinary(file, current_user.id)
     await validate_image_upload(file, settings.MAX_AVATAR_SIZE_BYTES)
     avatar_url = await save_avatar_to_cloudinary(file, current_user.id)
     

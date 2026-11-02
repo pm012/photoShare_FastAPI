@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import api from './api';
-import './Login.css';
+import api from './js/api';
+import './css/Login.css';
 
 const COPY = {
     login: { title: 'Sign in', subtitle: 'Welcome back to PhotoShare.', submit: 'Sign in' },

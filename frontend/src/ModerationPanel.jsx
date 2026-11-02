@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import api from './api';
+import api from './js/api';
 import UserAvatar from './UserAvatar';
-import useDebouncedValue from './useDebouncedValue';
-import './ModerationPanel.css';
+import useDebouncedValue from './js/useDebouncedValue';
+import './css/ModerationPanel.css';
 
 const PAGE_SIZE = 20;
 

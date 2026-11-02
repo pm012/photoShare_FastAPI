@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import api from './api';
+import api from './js/api';
 import ProfilePhotoGrid from './ProfilePhotoGrid';
 import UserAvatar from './UserAvatar';
-import './Profile.css';
+import './css/Profile.css';
 
 const formatDate = (date) => new Intl.DateTimeFormat('en-US', {
     day: 'numeric',

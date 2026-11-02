@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import api from './api';
+import api from './js/api';
 import { AvatarUpload } from './AvatarUpload'; // Interactive avatar uploader
 import ProfilePhotoGrid from './ProfilePhotoGrid';
-import './Profile.css';
-import './ProfileInfo.css';
+import './css/Profile.css';
+import './css/ProfileInfo.css';
 
 const formatDate = (date) => new Intl.DateTimeFormat('en-US', {
     day: 'numeric',

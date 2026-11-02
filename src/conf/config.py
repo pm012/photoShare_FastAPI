@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     PUBLIC_API_URL: str = "http://localhost:8000"
     FRONTEND_URL: str = "http://localhost:5173"
     MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024
+    MAX_AVATAR_SIZE_BYTES: int = 2 * 1024 * 1024
 
     # Agile logic for the local launch and Docker:
     # 1. If Docker => variable DATABASE_URL has already been provided to the system, and there's no need to search .env file.

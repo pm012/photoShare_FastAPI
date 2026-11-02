@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import api from './api';
-import './UploadPhoto.css';
+import api from './js/api';
+import './css/UploadPhoto.css';
 
 const MAX_TAGS = 5;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', "image/jpg"];

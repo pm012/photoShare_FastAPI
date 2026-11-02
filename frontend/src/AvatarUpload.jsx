@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import api from './api';
-import './AvatarUpload.css';
+import api from './js/api';
+import './css/AvatarUpload.css';
 
 const MAX_SIZE_MB = 3;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];

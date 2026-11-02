@@ -1,4 +1,4 @@
-import './Profile.css';
+import './css/Profile.css';
 
 // Grid of photo tiles used on both the own profile and public profiles.
 // When `onSelect` is passed, each tile is a button that opens the photo page.

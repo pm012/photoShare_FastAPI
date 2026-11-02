@@ -24,6 +24,7 @@ async def validate_image_upload(file: UploadFile, max_bytes: int) -> None:
         )
 
     # Read at most one byte more than allowed: enough to know the file is too large.
+    await file.seek(0)
     data = await file.read(max_bytes + 1)
     if len(data) > max_bytes:
         raise HTTPException(

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import api from './api';
+import api from './js/api';
 import UserAvatar from './UserAvatar';
-import './PhotoPage.css';
+import './css/PhotoPage.css';
 
 const STAFF_ROLES = ['admin', 'moderator'];
 const MAX_TAGS = 5;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import './UserAvatar.css';
+import './css/UserAvatar.css';
 
 // Round avatar: the user's picture when available, otherwise their initial.
 // Also falls back to the initial if the picture fails to load.

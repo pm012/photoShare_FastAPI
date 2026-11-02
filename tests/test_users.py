@@ -1,4 +1,7 @@
-from tests.test_photos import get_auth_headers
+from unittest.mock import AsyncMock
+
+import src.routes.users as users_route
+from tests.test_photos import VALID_IMAGE_BYTES, get_auth_headers
 
 def test_user_profile_operations_and_admin_actions(client):
     # 1. Register the first (ADMIN) and second (USER)
@@ -75,3 +78,42 @@ def test_duplicate_username_update_is_rejected(client):
         json={"username": "first"},
     )
     assert response.status_code == 409
+
+
+def test_avatar_upload_validates_before_uploading_once(client, monkeypatch):
+    client.post(
+        "/api/auth/signup",
+        json={"username": "avatar_user", "email": "avatar@example.com", "password": "password123"},
+    )
+    headers = get_auth_headers(client, "avatar@example.com", "password123")
+    save_avatar = AsyncMock(return_value="https://fake-cloudinary/avatar.png")
+    monkeypatch.setattr(users_route, "save_avatar_to_cloudinary", save_avatar)
+
+    response = client.post(
+        "/api/users/me/avatar",
+        headers=headers,
+        files={"file": ("avatar.png", VALID_IMAGE_BYTES, "image/png")},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["avatar_url"] == "https://fake-cloudinary/avatar.png"
+    save_avatar.assert_awaited_once()
+
+
+def test_avatar_upload_rejects_invalid_image_before_upload(client, monkeypatch):
+    client.post(
+        "/api/auth/signup",
+        json={"username": "invalid_avatar", "email": "invalid-avatar@example.com", "password": "password123"},
+    )
+    headers = get_auth_headers(client, "invalid-avatar@example.com", "password123")
+    save_avatar = AsyncMock(return_value="https://fake-cloudinary/avatar.png")
+    monkeypatch.setattr(users_route, "save_avatar_to_cloudinary", save_avatar)
+
+    response = client.post(
+        "/api/users/me/avatar",
+        headers=headers,
+        files={"file": ("avatar.png", b"not-an-image", "image/png")},
+    )
+
+    assert response.status_code == 400
+    save_avatar.assert_not_awaited()
