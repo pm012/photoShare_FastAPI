@@ -37,6 +37,7 @@ jobs:
     - name: Run Pytest
       env:
         PYTHONPATH: .
+        DATABASE_URL: "sqlite:///:memory:"
         SECRET_KEY: a_very_long_mock_secret_key_string_for_testing_purposes
         ALGORITHM: HS256
         MAIL_USERNAME: test@example.com
