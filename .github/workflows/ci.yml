@@ -35,7 +35,7 @@ jobs:
 
     - name: Install dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install --no-interaction
+      run: poetry install --no-interaction --no-root
 
     - name: Run Pytest
       # Sets environment context if your source code relies on specific paths
