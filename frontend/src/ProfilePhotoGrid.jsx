@@ -9,7 +9,7 @@ function ProfilePhotoGrid({ photos, onSelect }) {
                 const rating = Number(photo.average_rating || 0);
                 const tile = (
                     <>
-                        <img className="pr-tile__img" src={photo.url} alt="" loading="lazy" />
+                        <img id={`profile-photo-image-${photo.id}`} className="pr-tile__img" src={photo.url} alt="" loading="lazy" />
                         <span className="pr-tile__body">
                             <span className={photo.description ? 'pr-tile__text' : 'pr-tile__text is-empty'}>{photo.description || 'No description'}</span>
                             <span className={rating ? 'pr-tile__rating' : 'pr-tile__rating is-empty'}>{rating ? `★ ${rating.toFixed(1)}` : 'Not rated'}</span>
@@ -18,7 +18,7 @@ function ProfilePhotoGrid({ photos, onSelect }) {
                 );
 
                 return onSelect ? (
-                    <button className="pr-tile" type="button" key={photo.id} onClick={() => onSelect(photo.id)}>{tile}</button>
+                    <button id={`profile-photo-${photo.id}`} className="pr-tile" type="button" key={photo.id} onClick={() => onSelect(photo.id)}>{tile}</button>
                 ) : (
                     <div className="pr-tile" key={photo.id}>{tile}</div>
                 );

@@ -172,7 +172,7 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
         }, 'Transformed photo created.');
     };
 
-    const backButton = <button className="btn btn-secondary pd-back" type="button" onClick={onBack}>← Back to feed</button>;
+    const backButton = <button id="photo-back-to-feed" className="btn btn-secondary pd-back" type="button" onClick={onBack}>← Back to feed</button>;
 
     if (loading) return <main className="photo-page"><div className="feed-status" role="status">Loading photo...</div></main>;
     if (error && !photo) return <main className="photo-page">{backButton}<p className="error-message" role="alert">{error}</p></main>;
@@ -200,13 +200,13 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
 
             <div className="pd-layout">
                 <section className="pd-viewer">
-                    <img src={photo.url} alt={photo.description || 'PhotoShare photo'} />
+                    <img id="photo-viewer-image" src={photo.url} alt={photo.description || 'PhotoShare photo'} />
                 </section>
 
                 <aside className="pd-sidebar">
                     <section className="pd-card">
                         {authorName && (
-                            <button className="pd-author" type="button" onClick={() => onProfileSelect?.(authorName)} aria-label={`Open profile of ${authorName}`}>
+                            <button id={`photo-page-author-${photo.id}`} className="pd-author" type="button" onClick={() => onProfileSelect?.(authorName)} aria-label={`Open profile of ${authorName}`}>
                                 <UserAvatar username={authorName} url={photo.avatar_url || (isOwner ? currentUser.avatar_url : null)} size={28} />
                                 <span className="pd-author__name">@{authorName}</span>
                             </button>
@@ -231,6 +231,7 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
                                     {[1, 2, 3, 4, 5].map((value) => (
                                         <button
                                             key={value}
+                                            id={`photo-rating-${value}`}
                                             className={shownRating >= value ? 'pd-star is-active' : 'pd-star'}
                                             type="button"
                                             onClick={() => handleRating(value)}
@@ -257,41 +258,41 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
                                 <>
                                     <label className="pd-field">
                                         <span className="pd-field__label">Description</span>
-                                        <textarea className="field" value={description} onChange={(event) => setDescription(event.target.value)} rows="3" />
+                                        <textarea id="photo-description" className="field" value={description} onChange={(event) => setDescription(event.target.value)} rows="3" />
                                     </label>
                                     <label className="pd-field">
                                         <span className="pd-field__label">Tags</span>
-                                        <input className="field" type="text" placeholder="nature, sunset, travel" autoComplete="off" value={tagsText} onChange={(event) => setTagsText(event.target.value)} aria-invalid={tooManyTags} />
+                                        <input id="photo-tags" className="field" type="text" placeholder="nature, sunset, travel" autoComplete="off" value={tagsText} onChange={(event) => setTagsText(event.target.value)} aria-invalid={tooManyTags} />
                                         <span className={tooManyTags ? 'pd-hint is-error' : 'pd-hint'}>
                                             {tooManyTags ? `Remove ${parsedTags.length - MAX_TAGS} tag(s) to save` : 'Separate tags with commas'} · {parsedTags.length}/{MAX_TAGS}
                                         </span>
                                     </label>
                                     <div className="pd-actions">
-                                        <button className="btn btn-secondary" type="button" onClick={cancelDetailsEdit} disabled={submitting}>Cancel</button>
-                                        <button className="btn btn-primary" type="button" onClick={handleDetailsSave} disabled={submitting || tooManyTags}>Save</button>
+                                        <button id="photo-details-cancel" className="btn btn-secondary" type="button" onClick={cancelDetailsEdit} disabled={submitting}>Cancel</button>
+                                        <button id="photo-details-save" className="btn btn-primary" type="button" onClick={handleDetailsSave} disabled={submitting || tooManyTags}>Save</button>
                                     </div>
                                 </>
                             ) : (
                                 <div className="pd-actions">
-                                    <button className="btn btn-secondary" type="button" onClick={() => setIsEditingDescription(true)}>Edit details</button>
-                                    <button className="btn btn-danger" type="button" onClick={handleDeletePhoto} disabled={submitting}>Delete</button>
+                                    <button id="photo-details-edit" className="btn btn-secondary" type="button" onClick={() => setIsEditingDescription(true)}>Edit details</button>
+                                    <button id="photo-delete" className="btn btn-danger" type="button" onClick={handleDeletePhoto} disabled={submitting}>Delete</button>
                                 </div>
                             )}
                         </section>
                     )}
 
-                    <form className="pd-card" onSubmit={handleTransform}>
+                    <form id="photo-transform-form" className="pd-card" onSubmit={handleTransform}>
                         <h3>Create a version</h3>
-                        <select className="field" aria-label="Preset" value={preset} onChange={(event) => setPreset(event.target.value)}>
+                        <select id="photo-transform-preset" className="field" aria-label="Preset" value={preset} onChange={(event) => setPreset(event.target.value)}>
                             <option value="thumbnail">Thumbnail</option>
                             <option value="avatar">Avatar</option>
                             <option value="black_white">Black and white</option>
                         </select>
-                        <button className="btn btn-secondary" type="submit" disabled={submitting}>Apply preset</button>
+                        <button id="photo-transform-submit" className="btn btn-secondary" type="submit" disabled={submitting}>Apply preset</button>
                         {transformation && (
                             <div className="pd-transformed">
-                                <img src={transformation.transformed_url} alt="Transformed photo" />
-                                <a href={transformation.qr_code_url} target="_blank" rel="noreferrer">View QR code</a>
+                                <img id="photo-transformed-image" src={transformation.transformed_url} alt="Transformed photo" />
+                                <a id="photo-transformation-qr" href={transformation.qr_code_url} target="_blank" rel="noreferrer">View QR code</a>
                             </div>
                         )}
                     </form>
@@ -304,11 +305,11 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
                     <span className="pd-count">{comments.length}</span>
                 </div>
 
-                <form className="pd-comment-form" onSubmit={handleCommentSubmit}>
-                    <textarea className="field" aria-label="Write a comment" value={commentText} onChange={(event) => setCommentText(event.target.value)} maxLength="500" placeholder="Write a comment..." rows="3" />
+                <form id="photo-comment-form" className="pd-comment-form" onSubmit={handleCommentSubmit}>
+                    <textarea id="photo-comment-input" className="field" aria-label="Write a comment" value={commentText} onChange={(event) => setCommentText(event.target.value)} maxLength="500" placeholder="Write a comment..." rows="3" />
                     <div className="pd-form-footer">
                         <span>{commentText.length}/500</span>
-                        <button className="btn btn-primary" type="submit" disabled={submitting || !commentText.trim()}>Post</button>
+                        <button id="photo-comment-submit" className="btn btn-primary" type="submit" disabled={submitting || !commentText.trim()}>Post</button>
                     </div>
                 </form>
 
@@ -319,7 +320,7 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
                         <article className="pd-comment" key={comment.id}>
                             <div className="pd-comment__meta">
                                 {getCommentAuthor(comment) ? (
-                                    <button className="pd-link-btn" type="button" onClick={() => onProfileSelect?.(getCommentAuthor(comment))}>@{getCommentAuthor(comment)}</button>
+                                    <button id={`photo-comment-${comment.id}-author`} className="pd-link-btn" type="button" onClick={() => onProfileSelect?.(getCommentAuthor(comment))}>@{getCommentAuthor(comment)}</button>
                                 ) : (
                                     <strong>User #{comment.user_id}</strong>
                                 )}
@@ -327,10 +328,10 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
                             </div>
                             {editingCommentId === comment.id ? (
                                 <>
-                                    <textarea className="field" aria-label="Edit comment" value={editingText} onChange={(event) => setEditingText(event.target.value)} maxLength="500" rows="3" />
+                                    <textarea id={`photo-comment-${comment.id}-edit-input`} className="field" aria-label="Edit comment" value={editingText} onChange={(event) => setEditingText(event.target.value)} maxLength="500" rows="3" />
                                     <div className="pd-actions">
-                                        <button className="btn btn-secondary" type="button" onClick={() => setEditingCommentId(null)} disabled={submitting}>Cancel</button>
-                                        <button className="btn btn-primary" type="button" onClick={() => handleCommentUpdate(comment.id)} disabled={submitting || !editingText.trim()}>Save</button>
+                                        <button id={`photo-comment-${comment.id}-edit-cancel`} className="btn btn-secondary" type="button" onClick={() => setEditingCommentId(null)} disabled={submitting}>Cancel</button>
+                                        <button id={`photo-comment-${comment.id}-edit-save`} className="btn btn-primary" type="button" onClick={() => handleCommentUpdate(comment.id)} disabled={submitting || !editingText.trim()}>Save</button>
                                     </div>
                                 </>
                             ) : (
@@ -338,8 +339,8 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
                                     <p>{comment.text}</p>
                                     {(comment.user_id === currentUser.id || isStaff) && (
                                         <div className="pd-comment__actions">
-                                            <button className="pd-link-btn" type="button" onClick={() => { setEditingCommentId(comment.id); setEditingText(comment.text); }}>Edit</button>
-                                            {isStaff && <button className="pd-link-btn is-danger" type="button" onClick={() => handleCommentDelete(comment.id)} disabled={submitting}>Delete</button>}
+                                            <button id={`photo-comment-${comment.id}-edit`} className="pd-link-btn" type="button" onClick={() => { setEditingCommentId(comment.id); setEditingText(comment.text); }}>Edit</button>
+                                            {isStaff && <button id={`photo-comment-${comment.id}-delete`} className="pd-link-btn is-danger" type="button" onClick={() => handleCommentDelete(comment.id)} disabled={submitting}>Delete</button>}
                                         </div>
                                     )}
                                 </>

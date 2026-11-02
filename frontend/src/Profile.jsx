@@ -118,15 +118,15 @@ function Profile({ onPhotoSelect }) {
                             <dt>Username</dt>
                             <dd>
                                 {isEditing ? (
-                                    <form className="pi-edit" onSubmit={handleSaveUsername}>
-                                        <input className="field" type="text" aria-label="Username" value={username} onChange={(event) => setUsername(event.target.value)} minLength={3} maxLength={50} autoComplete="off" autoFocus />
-                                        <button className="btn btn-primary" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
-                                        <button className="btn btn-secondary" type="button" onClick={handleCancelEdit} disabled={saving}>Cancel</button>
+                                    <form id="profile-username-form" className="pi-edit" onSubmit={handleSaveUsername}>
+                                        <input id="profile-username" className="field" type="text" aria-label="Username" value={username} onChange={(event) => setUsername(event.target.value)} minLength={3} maxLength={50} autoComplete="off" autoFocus />
+                                        <button id="profile-username-save" className="btn btn-primary" type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
+                                        <button id="profile-username-cancel" className="btn btn-secondary" type="button" onClick={handleCancelEdit} disabled={saving}>Cancel</button>
                                     </form>
                                 ) : (
                                     <>
                                         <span className="pi-username">@{user.username}</span>
-                                        <button className="pi-icon-btn" type="button" aria-label="Edit username" title="Edit username" onClick={() => { setIsEditing(true); setSaveMessage(''); }}>
+                                        <button id="profile-username-edit" className="pi-icon-btn" type="button" aria-label="Edit username" title="Edit username" onClick={() => { setIsEditing(true); setSaveMessage(''); }}>
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                                 <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
                                             </svg>

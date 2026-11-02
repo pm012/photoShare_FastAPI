@@ -29,7 +29,7 @@ function PasswordField({ id, label, value, onChange, autoComplete, hint, hintIsE
             </div>
             <div className="lg-password">
                 <input id={id} className="field" type={visible ? 'text' : 'password'} value={value} onChange={onChange} minLength={6} autoComplete={autoComplete} required />
-                <button className="lg-toggle" type="button" onClick={() => setVisible((current) => !current)} aria-pressed={visible} aria-label={visible ? 'Hide password' : 'Show password'}>
+                <button id={`${id}-toggle`} className="lg-toggle" type="button" onClick={() => setVisible((current) => !current)} aria-pressed={visible} aria-label={visible ? 'Hide password' : 'Show password'}>
                     {visible ? 'Hide' : 'Show'}
                 </button>
             </div>
@@ -120,7 +120,7 @@ function Login({ onLoginSuccess }) {
                 {error && <p className="error-message" role="alert">{error}</p>}
                 {successMessage && <p className="success-message" role="status">{successMessage}</p>}
 
-                <form className="lg-form" onSubmit={handleSubmit}>
+                <form id="auth-form" className="lg-form" onSubmit={handleSubmit}>
                     {mode === 'signup' && (
                         <div className="lg-field">
                             <label className="lg-label" htmlFor="auth-username">Username</label>
@@ -143,7 +143,7 @@ function Login({ onLoginSuccess }) {
                             onChange={(e) => setPassword(e.target.value)}
                             autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                             hint={mode === 'login' ? '' : 'At least 6 characters'}
-                            labelAside={mode === 'login' && <button className="lg-link" type="button" onClick={() => switchMode('forgot')}>Forgot password?</button>}
+                            labelAside={mode === 'login' && <button id="auth-forgot-password" className="lg-link" type="button" onClick={() => switchMode('forgot')}>Forgot password?</button>}
                         />
                     )}
 
@@ -159,15 +159,15 @@ function Login({ onLoginSuccess }) {
                         />
                     )}
 
-                    <button className="btn btn-primary" type="submit" disabled={loading}>
+                    <button id="auth-submit" className="btn btn-primary" type="submit" disabled={loading}>
                         {loading ? 'Please wait...' : copy.submit}
                     </button>
                 </form>
 
                 <div className="lg-footer">
-                    {mode === 'login' && <p>New to PhotoShare? <button className="lg-link" type="button" onClick={() => switchMode('signup')}>Create an account</button></p>}
-                    {mode === 'signup' && <p>Already have an account? <button className="lg-link" type="button" onClick={() => switchMode('login')}>Sign in</button></p>}
-                    {(mode === 'forgot' || mode === 'reset') && <p><button className="lg-link" type="button" onClick={() => switchMode('login')}>Back to sign in</button></p>}
+                    {mode === 'login' && <p>New to PhotoShare? <button id="auth-create-account" className="lg-link" type="button" onClick={() => switchMode('signup')}>Create an account</button></p>}
+                    {mode === 'signup' && <p>Already have an account? <button id="auth-sign-in" className="lg-link" type="button" onClick={() => switchMode('login')}>Sign in</button></p>}
+                    {(mode === 'forgot' || mode === 'reset') && <p><button id="auth-back-to-sign-in" className="lg-link" type="button" onClick={() => switchMode('login')}>Back to sign in</button></p>}
                 </div>
             </div>
         </main>

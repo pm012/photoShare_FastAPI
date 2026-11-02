@@ -53,10 +53,10 @@ function PhotoCard({ photo, onOpen, onOpenProfile, onZoom, onTagClick }) {
     const hiddenTags = tags.length - MAX_VISIBLE_TAGS;
 
     return (
-        <article className="photo-card">
+        <article id={`photo-card-${photo.id}`} className="photo-card">
             <div className="photo-media">
-                <img src={photo.url} alt={photo.description || `Photo by @${photo.username}`} loading="lazy" />
-                <button className="photo-zoom" type="button" onClick={() => onZoom(photo)} aria-label="View full-size image">
+                <img id={`photo-image-${photo.id}`} src={photo.url} alt={photo.description || `Photo by @${photo.username}`} loading="lazy" />
+                <button id={`photo-zoom-${photo.id}`} className="photo-zoom" type="button" onClick={() => onZoom(photo)} aria-label="View full-size image">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
                     </svg>
@@ -64,12 +64,12 @@ function PhotoCard({ photo, onOpen, onOpenProfile, onZoom, onTagClick }) {
             </div>
 
             <div className="photo-body">
-                <button className="photo-author" type="button" onClick={() => onOpenProfile(photo.username)} aria-label={`Open profile of ${photo.username}`}>
+                <button id={`photo-author-${photo.id}`} className="photo-author" type="button" onClick={() => onOpenProfile(photo.username)} aria-label={`Open profile of ${photo.username}`}>
                     <UserAvatar username={photo.username} url={photo.avatar_url} size={26} />
                     <span className="photo-author__name">@{photo.username}</span>
                 </button>
 
-                <button className="photo-open" type="button" onClick={() => onOpen(photo.id)}>
+                <button id={`photo-open-${photo.id}`} className="photo-open" type="button" onClick={() => onOpen(photo.id)}>
                     <span className="photo-description">{photo.description || <i>No description</i>}</span>
                 </button>
 
@@ -79,7 +79,7 @@ function PhotoCard({ photo, onOpen, onOpenProfile, onZoom, onTagClick }) {
                     <ul className="tag-list" aria-label="Tags">
                         {tags.slice(0, MAX_VISIBLE_TAGS).map((tag) => (
                             <li key={tag.id}>
-                                <button className="tag" type="button" onClick={() => onTagClick(tag.name)} title={`Show photos tagged #${tag.name}`}>#{tag.name}</button>
+                                <button id={`photo-${photo.id}-tag-${tag.id}`} className="tag" type="button" onClick={() => onTagClick(tag.name)} title={`Show photos tagged #${tag.name}`}>#{tag.name}</button>
                             </li>
                         ))}
                         {hiddenTags > 0 && <li className="tag">+{hiddenTags}</li>}
@@ -197,7 +197,7 @@ function PhotoFeed({ onPhotoSelect, onProfileSelect }) {
                     <h2>Photo Gallery</h2>
                     <p className="feed-subtitle">Bright ideas, moments, and stories from the PhotoShare community.</p>
                 </div>
-                <button className="btn btn-primary" type="button" onClick={() => setIsUploadOpen(true)}>
+                <button id="feed-upload-photo" className="btn btn-primary" type="button" onClick={() => setIsUploadOpen(true)}>
                     <span aria-hidden="true">+</span> Upload Photo
                 </button>
             </header>
@@ -205,10 +205,11 @@ function PhotoFeed({ onPhotoSelect, onProfileSelect }) {
             <div className="feed-toolbar" role="search">
                 <div className="feed-filters">
                     <div className="search-group">
-                        <select className="field" aria-label="Search by" value={searchField} onChange={(e) => updateFilters({ searchField: e.target.value })}>
+                        <select id="feed-search-field" className="field" aria-label="Search by" value={searchField} onChange={(e) => updateFilters({ searchField: e.target.value })}>
                             {SEARCH_FIELDS.map((field) => <option key={field.value} value={field.value}>{field.label}</option>)}
                         </select>
                         <input
+                            id="feed-search-query"
                             className="field"
                             type="search"
                             placeholder={`Search by ${currentField.label.toLowerCase()}...`}
@@ -217,10 +218,10 @@ function PhotoFeed({ onPhotoSelect, onProfileSelect }) {
                             onChange={(e) => setFilters((previous) => ({ ...previous, query: e.target.value }))}
                         />
                     </div>
-                    <select className="field" aria-label="Minimum rating" value={minRating} onChange={(e) => updateFilters({ minRating: e.target.value })}>
+                    <select id="feed-min-rating" className="field" aria-label="Minimum rating" value={minRating} onChange={(e) => updateFilters({ minRating: e.target.value })}>
                         {RATING_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                     </select>
-                    <button className="btn btn-secondary" type="button" onClick={handleReset} disabled={!hasActiveFilters}>Reset</button>
+                    <button id="feed-reset-filters" className="btn btn-secondary" type="button" onClick={handleReset} disabled={!hasActiveFilters}>Reset</button>
                 </div>
 
                 <div className="sort-bar" role="group" aria-label="Sort photos">
@@ -231,6 +232,7 @@ function PhotoFeed({ onPhotoSelect, onProfileSelect }) {
                         return (
                             <button
                                 key={option.value}
+                                id={`feed-sort-${option.value}`}
                                 className={isActive ? 'btn btn-secondary sort-chip is-active' : 'btn btn-secondary sort-chip'}
                                 type="button"
                                 onClick={() => handleSort(option.value)}
@@ -248,7 +250,7 @@ function PhotoFeed({ onPhotoSelect, onProfileSelect }) {
             {error && (
                 <div className="error-message feed-error" role="alert">
                     <span>{error}</span>
-                    <button className="btn btn-secondary" type="button" onClick={() => setReloadKey((key) => key + 1)}>Try again</button>
+                    <button id="feed-retry" className="btn btn-secondary" type="button" onClick={() => setReloadKey((key) => key + 1)}>Try again</button>
                 </div>
             )}
 
@@ -260,17 +262,17 @@ function PhotoFeed({ onPhotoSelect, onProfileSelect }) {
                         {page > 1 ? (
                             <>
                                 <p>There are no more photos.</p>
-                                <button className="btn btn-secondary" type="button" onClick={() => goToPage(page - 1)}>‹ Previous</button>
+                                <button id="feed-previous-page" className="btn btn-secondary" type="button" onClick={() => goToPage(page - 1)}>‹ Previous</button>
                             </>
                         ) : hasActiveFilters ? (
                             <>
                                 <p>No photos match your search.</p>
-                                <button className="btn btn-secondary" type="button" onClick={handleReset}>Reset Filters</button>
+                                <button id="feed-empty-reset-filters" className="btn btn-secondary" type="button" onClick={handleReset}>Reset Filters</button>
                             </>
                         ) : (
                             <>
                                 <p>No photos yet. Be the first to upload one.</p>
-                                <button className="btn btn-primary" type="button" onClick={() => setIsUploadOpen(true)}>Upload Photo</button>
+                                <button id="feed-empty-upload-photo" className="btn btn-primary" type="button" onClick={() => setIsUploadOpen(true)}>Upload Photo</button>
                             </>
                         )}
                     </div>
@@ -290,9 +292,9 @@ function PhotoFeed({ onPhotoSelect, onProfileSelect }) {
                         ))}
                     </div>
                     <nav className="pagination" aria-label="Pagination">
-                        <button className="btn btn-secondary" type="button" onClick={() => goToPage(page - 1)} disabled={page === 1 || loading}>‹ Previous</button>
+                        <button id="feed-previous-page" className="btn btn-secondary" type="button" onClick={() => goToPage(page - 1)} disabled={page === 1 || loading}>‹ Previous</button>
                         <span>Page {page}</span>
-                        <button className="btn btn-secondary" type="button" onClick={() => goToPage(page + 1)} disabled={!hasNextPage || loading}>Next ›</button>
+                        <button id="feed-next-page" className="btn btn-secondary" type="button" onClick={() => goToPage(page + 1)} disabled={!hasNextPage || loading}>Next ›</button>
                     </nav>
                 </>
             )}
@@ -305,10 +307,10 @@ function PhotoFeed({ onPhotoSelect, onProfileSelect }) {
             )}
 
             {lightboxPhoto && (
-                <div className="lightbox-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setLightboxPhoto(null)}>
-                    <section className="lightbox" role="dialog" aria-modal="true" aria-label="Full-size photo viewer">
-                        <button className="icon-button lightbox-close" type="button" onClick={() => setLightboxPhoto(null)} aria-label="Close viewer">×</button>
-                        <img src={lightboxPhoto.url} alt={lightboxPhoto.description || 'Full-size photo'} />
+                <div id="photo-lightbox-backdrop" className="lightbox-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setLightboxPhoto(null)}>
+                    <section id="photo-lightbox-dialog" className="lightbox" role="dialog" aria-modal="true" aria-label="Full-size photo viewer">
+                        <button id="photo-lightbox-close" className="icon-button lightbox-close" type="button" onClick={() => setLightboxPhoto(null)} aria-label="Close viewer">×</button>
+                        <img id="photo-lightbox-image" src={lightboxPhoto.url} alt={lightboxPhoto.description || 'Full-size photo'} />
                     </section>
                 </div>
             )}

@@ -133,10 +133,10 @@ function AdminPanel({ currentRole }) {
                 <span className="ad-badge">{isAdmin ? 'Administrator' : 'Moderator'}</span>
             </header>
 
-            <form className="ad-search" role="search" onSubmit={handleSearch}>
-                <input className="field" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by username or email" aria-label="Search users" />
-                <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? 'Searching...' : 'Search'}</button>
-                {appliedQuery && <button className="btn btn-secondary" type="button" onClick={handleClear} disabled={loading}>Clear</button>}
+            <form id="admin-search-form" className="ad-search" role="search" onSubmit={handleSearch}>
+                <input id="admin-search-query" className="field" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by username or email" aria-label="Search users" />
+                <button id="admin-search-submit" className="btn btn-primary" type="submit" disabled={loading}>{loading ? 'Searching...' : 'Search'}</button>
+                {appliedQuery && <button id="admin-search-clear" className="btn btn-secondary" type="button" onClick={handleClear} disabled={loading}>Clear</button>}
             </form>
 
             {error && <p className="error-message" role="alert">{error}</p>}
@@ -176,7 +176,7 @@ function AdminPanel({ currentRole }) {
                                             </td>
                                             <td>
                                                 {isAdmin && !isSelf ? (
-                                                    <select className="field ad-role-select" aria-label={`Role of ${user.username}`} value={roleName(user.role)} onChange={(event) => handleRoleChange(user, event.target.value)} disabled={isWorking}>
+                                                    <select id={`admin-user-${user.id}-role`} className="field ad-role-select" aria-label={`Role of ${user.username}`} value={roleName(user.role)} onChange={(event) => handleRoleChange(user, event.target.value)} disabled={isWorking}>
                                                         <option value="user">User</option>
                                                         <option value="moderator">Moderator</option>
                                                         <option value="admin">Administrator</option>
@@ -190,6 +190,7 @@ function AdminPanel({ currentRole }) {
                                             <td>
                                                 <div className="ad-actions">
                                                     <button
+                                                        id={`admin-user-${user.id}-ban-toggle`}
                                                         className="btn btn-secondary"
                                                         type="button"
                                                         onClick={() => handleBanToggle(user)}
@@ -200,6 +201,7 @@ function AdminPanel({ currentRole }) {
                                                     </button>
                                                     {isAdmin && (
                                                         <button
+                                                            id={`admin-user-${user.id}-delete`}
                                                             className="btn btn-secondary ad-btn-danger"
                                                             type="button"
                                                             onClick={() => handleDelete(user)}
@@ -220,9 +222,9 @@ function AdminPanel({ currentRole }) {
                 )}
 
                 <nav className="ad-pagination" aria-label="Pagination">
-                    <button className="btn btn-secondary" type="button" onClick={() => setPage((current) => current - 1)} disabled={loading || page === 1}>‹ Previous</button>
+                    <button id="admin-previous-page" className="btn btn-secondary" type="button" onClick={() => setPage((current) => current - 1)} disabled={loading || page === 1}>‹ Previous</button>
                     <span>Page {page}</span>
-                    <button className="btn btn-secondary" type="button" onClick={() => setPage((current) => current + 1)} disabled={loading || !hasNextPage}>Next ›</button>
+                    <button id="admin-next-page" className="btn btn-secondary" type="button" onClick={() => setPage((current) => current + 1)} disabled={loading || !hasNextPage}>Next ›</button>
                 </nav>
             </section>
         </main>

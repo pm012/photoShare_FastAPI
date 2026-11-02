@@ -87,8 +87,8 @@ export const AvatarUpload = ({ currentAvatarUrl, userName = 'User', onAvatarUpda
     return (
         <div className="av-root">
             {/* The picture itself is the "change photo" control. */}
-            <button className="av-avatar" type="button" onClick={openFilePicker} disabled={loading} aria-label={preview ? 'Change profile photo' : 'Upload profile photo'}>
-                {preview ? <img src={preview} alt={`${userName}'s avatar`} /> : <span aria-hidden="true">{userName.charAt(0).toUpperCase()}</span>}
+            <button id="profile-avatar-upload" className="av-avatar" type="button" onClick={openFilePicker} disabled={loading} aria-label={preview ? 'Change profile photo' : 'Upload profile photo'}>
+                {preview ? <img id="profile-avatar-preview" src={preview} alt={`${userName}'s avatar`} /> : <span aria-hidden="true">{userName.charAt(0).toUpperCase()}</span>}
                 <span className={loading ? 'av-overlay is-visible' : 'av-overlay'} aria-hidden="true">
                     {loading ? 'Uploading...' : preview ? 'Change photo' : 'Add photo'}
                 </span>
@@ -96,6 +96,7 @@ export const AvatarUpload = ({ currentAvatarUrl, userName = 'User', onAvatarUpda
 
             <input
                 ref={fileInputRef}
+                id="profile-avatar-file"
                 className="visually-hidden"
                 type="file"
                 accept={ALLOWED_TYPES.join(',')}
@@ -105,7 +106,7 @@ export const AvatarUpload = ({ currentAvatarUrl, userName = 'User', onAvatarUpda
             />
 
             {preview ? (
-                <button className="btn btn-secondary av-remove" type="button" onClick={handleDeleteAvatar} disabled={loading}>
+                <button id="profile-avatar-delete" className="btn btn-secondary av-remove" type="button" onClick={handleDeleteAvatar} disabled={loading}>
                     Delete Profile Photo
                 </button>
             ) : (

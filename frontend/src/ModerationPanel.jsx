@@ -57,7 +57,7 @@ function CreatorPicker({ creator, onSelect, onClear }) {
             <div className="mo-chip">
                 <UserAvatar username={creator.username} url={creator.avatar_url} size={26} />
                 <span className="mo-chip__name">@{creator.username}</span>
-                <button className="mo-chip__clear" type="button" onClick={onClear} aria-label="Remove creator filter">×</button>
+                <button id="moderation-creator-clear" className="mo-chip__clear" type="button" onClick={onClear} aria-label="Remove creator filter">×</button>
             </div>
         );
     }
@@ -67,6 +67,7 @@ function CreatorPicker({ creator, onSelect, onClear }) {
     return (
         <div className="mo-picker" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }}>
             <input
+                id="moderation-creator-search"
                 className="field"
                 type="search"
                 placeholder="Creator: username or email"
@@ -83,7 +84,7 @@ function CreatorPicker({ creator, onSelect, onClear }) {
                     {settled && results.length === 0 && <li className="mo-suggestions__empty">No users found.</li>}
                     {settled && results.map((user) => (
                         <li key={user.id}>
-                            <button className="mo-suggestion" type="button" onClick={() => { onSelect(user); setText(''); setOpen(false); }}>
+                            <button id={`moderation-creator-option-${user.id}`} className="mo-suggestion" type="button" onClick={() => { onSelect(user); setText(''); setOpen(false); }}>
                                 <UserAvatar username={user.username} url={user.avatar_url} size={30} />
                                 <span className="mo-suggestion__text"><strong>@{user.username}</strong><span>{user.email}</span></span>
                             </button>
@@ -283,11 +284,11 @@ function ModerationPanel({ onPhotoSelect }) {
 
             <div className="mo-toolbar" role="search">
                 <CreatorPicker creator={creator} onSelect={selectCreator} onClear={clearCreator} />
-                <input className="field" type="search" placeholder="Search descriptions..." aria-label="Search descriptions" value={keywordInput} onChange={(event) => setKeywordInput(event.target.value)} />
-                <select className="field" aria-label="Sort photos" value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }}>
+                <input id="moderation-search-description" className="field" type="search" placeholder="Search descriptions..." aria-label="Search descriptions" value={keywordInput} onChange={(event) => setKeywordInput(event.target.value)} />
+                <select id="moderation-sort" className="field" aria-label="Sort photos" value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }}>
                     {SORTS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
-                <button className="btn btn-secondary" type="button" onClick={handleReset} disabled={!hasActiveFilters}>Reset</button>
+                <button id="moderation-reset-filters" className="btn btn-secondary" type="button" onClick={handleReset} disabled={!hasActiveFilters}>Reset</button>
             </div>
 
             {error && <p className="error-message" role="alert">{error}</p>}
@@ -321,7 +322,7 @@ function ModerationPanel({ onPhotoSelect }) {
                                         <tr key={photo.id}>
                                             <td>
                                                 <div className="mo-photo">
-                                                    <img className="mo-thumb" src={photo.url} alt="" loading="lazy" />
+                                                    <img id={`moderation-photo-image-${photo.id}`} className="mo-thumb" src={photo.url} alt="" loading="lazy" />
                                                     <span className={photo.description ? 'mo-desc' : 'mo-desc is-empty'}>{photo.description || 'No description'}</span>
                                                 </div>
                                             </td>
@@ -333,7 +334,7 @@ function ModerationPanel({ onPhotoSelect }) {
                                             </td>
                                             <td>{rating ? <span className="mo-stars">★ {rating.toFixed(1)}</span> : <span className="mo-muted">Not rated</span>}</td>
                                             <td>{formatDate(photo.created_at)}</td>
-                                            <td><button className="btn btn-secondary" type="button" onClick={() => openReview(photo)}>Moderate</button></td>
+                                            <td><button id={`moderation-photo-${photo.id}-open`} className="btn btn-secondary" type="button" onClick={() => openReview(photo)}>Moderate</button></td>
                                         </tr>
                                     );
                                 })}
@@ -343,18 +344,18 @@ function ModerationPanel({ onPhotoSelect }) {
                 )}
 
                 <nav className="mo-pagination" aria-label="Pagination">
-                    <button className="btn btn-secondary" type="button" onClick={() => setPage((current) => current - 1)} disabled={loading || page === 1}>‹ Previous</button>
+                    <button id="moderation-previous-page" className="btn btn-secondary" type="button" onClick={() => setPage((current) => current - 1)} disabled={loading || page === 1}>‹ Previous</button>
                     <span>Page {page}</span>
-                    <button className="btn btn-secondary" type="button" onClick={() => setPage((current) => current + 1)} disabled={loading || !hasNextPage}>Next ›</button>
+                    <button id="moderation-next-page" className="btn btn-secondary" type="button" onClick={() => setPage((current) => current + 1)} disabled={loading || !hasNextPage}>Next ›</button>
                 </nav>
             </section>
 
             {selectedPhoto && (
-                <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setSelectedPhoto(null)}>
-                    <section className="mo-dialog" role="dialog" aria-modal="true" aria-labelledby="mo-dialog-title">
+                <div id={`moderation-photo-${selectedPhoto.id}-dialog-backdrop`} className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setSelectedPhoto(null)}>
+                    <section id={`moderation-photo-${selectedPhoto.id}-dialog`} className="mo-dialog" role="dialog" aria-modal="true" aria-labelledby="mo-dialog-title">
                         <div className="modal-heading">
                             <h3 id="mo-dialog-title">Moderate photo</h3>
-                            <button className="icon-button" type="button" onClick={() => setSelectedPhoto(null)} aria-label="Close dialog">×</button>
+                            <button id="moderation-dialog-close-icon" className="icon-button" type="button" onClick={() => setSelectedPhoto(null)} aria-label="Close dialog">×</button>
                         </div>
 
                         {dialogError && <p className="error-message" role="alert">{dialogError}</p>}
@@ -362,7 +363,7 @@ function ModerationPanel({ onPhotoSelect }) {
 
                         <div className="mo-dialog__body">
                             <div>
-                                <img className="mo-preview" src={selectedPhoto.url} alt={selectedPhoto.description || 'Photo under moderation'} />
+                                <img id={`moderation-photo-${selectedPhoto.id}-preview`} className="mo-preview" src={selectedPhoto.url} alt={selectedPhoto.description || 'Photo under moderation'} />
                                 <div className="mo-meta">
                                     <p>{selectedPhoto.description || <i className="mo-muted">No description</i>}</p>
                                     <p className="mo-creator"><UserAvatar username={selectedPhoto.username} url={selectedPhoto.avatar_url} size={24} />@{selectedPhoto.username}</p>
@@ -389,18 +390,18 @@ function ModerationPanel({ onPhotoSelect }) {
                                                     </small>
                                                     {editingCommentId === comment.id ? (
                                                         <>
-                                                            <textarea className="field" aria-label="Edit comment" value={editingText} onChange={(event) => setEditingText(event.target.value)} maxLength="500" rows="3" />
+                                                            <textarea id={`moderation-comment-${comment.id}-edit-input`} className="field" aria-label="Edit comment" value={editingText} onChange={(event) => setEditingText(event.target.value)} maxLength="500" rows="3" />
                                                             <div className="mo-comment__actions">
-                                                                <button className="btn btn-secondary" type="button" onClick={() => setEditingCommentId(null)} disabled={commentBusyId === comment.id}>Cancel</button>
-                                                                <button className="btn btn-primary" type="button" onClick={() => handleSaveComment(comment.id)} disabled={commentBusyId === comment.id || !editingText.trim()}>Save</button>
+                                                                <button id={`moderation-comment-${comment.id}-edit-cancel`} className="btn btn-secondary" type="button" onClick={() => setEditingCommentId(null)} disabled={commentBusyId === comment.id}>Cancel</button>
+                                                                <button id={`moderation-comment-${comment.id}-edit-save`} className="btn btn-primary" type="button" onClick={() => handleSaveComment(comment.id)} disabled={commentBusyId === comment.id || !editingText.trim()}>Save</button>
                                                             </div>
                                                         </>
                                                     ) : (
                                                         <>
                                                             <p>{comment.text}</p>
                                                             <div className="mo-comment__actions">
-                                                                <button className="btn btn-secondary" type="button" onClick={() => { setEditingCommentId(comment.id); setEditingText(comment.text); }} disabled={commentBusyId === comment.id}>Edit</button>
-                                                                <button className="btn btn-secondary mo-btn-danger" type="button" onClick={() => handleDeleteComment(comment.id)} disabled={commentBusyId === comment.id}>Delete</button>
+                                                                <button id={`moderation-comment-${comment.id}-edit`} className="btn btn-secondary" type="button" onClick={() => { setEditingCommentId(comment.id); setEditingText(comment.text); }} disabled={commentBusyId === comment.id}>Edit</button>
+                                                                <button id={`moderation-comment-${comment.id}-delete`} className="btn btn-secondary mo-btn-danger" type="button" onClick={() => handleDeleteComment(comment.id)} disabled={commentBusyId === comment.id}>Delete</button>
                                                             </div>
                                                         </>
                                                     )}
@@ -427,7 +428,7 @@ function ModerationPanel({ onPhotoSelect }) {
                                                         <strong className="mo-stars">★ {rating.rate} / 5</strong>
                                                         <small>{rating.username ? `@${rating.username}` : `User #${rating.user_id}`}</small>
                                                     </div>
-                                                    <button className="btn btn-secondary mo-btn-danger" type="button" onClick={() => handleDeleteRating(rating.id)} disabled={deletingId === rating.id}>
+                                                    <button id={`moderation-rating-${rating.id}-delete`} className="btn btn-secondary mo-btn-danger" type="button" onClick={() => handleDeleteRating(rating.id)} disabled={deletingId === rating.id}>
                                                         {deletingId === rating.id ? 'Deleting...' : 'Delete'}
                                                     </button>
                                                 </li>
@@ -439,8 +440,8 @@ function ModerationPanel({ onPhotoSelect }) {
                         </div>
 
                         <div className="modal-actions">
-                            <button className="btn btn-secondary" type="button" onClick={() => setSelectedPhoto(null)}>Close</button>
-                            {onPhotoSelect && <button className="btn btn-primary" type="button" onClick={() => onPhotoSelect(selectedPhoto.id)}>Open photo page</button>}
+                            <button id="moderation-dialog-close" className="btn btn-secondary" type="button" onClick={() => setSelectedPhoto(null)}>Close</button>
+                            {onPhotoSelect && <button id={`moderation-photo-${selectedPhoto.id}-open-page`} className="btn btn-primary" type="button" onClick={() => onPhotoSelect(selectedPhoto.id)}>Open photo page</button>}
                         </div>
                     </section>
                 </div>

@@ -134,14 +134,14 @@ function App() {
       {isAuthenticated ? (
         <div>
           <div className="app-header">
-            <button className="brand-button" onClick={() => navigateTo('feed')}>PhotoShare</button>
+            <button id="nav-brand" className="brand-button" onClick={() => navigateTo('feed')}>PhotoShare</button>
             <nav className="main-nav" aria-label="Main navigation">
-              <button className={navClass('feed')} onClick={() => navigateTo('feed')}>Photo Gallery</button>              
-              {isStaff && <button className={navClass('admin')} onClick={() => navigateTo('admin')}>User Management</button>}
-              {isStaff && <button className={navClass('moderation')} onClick={() => navigateTo('moderation')}>Images Moderation</button>}
+              <button id="nav-gallery" className={navClass('feed')} onClick={() => navigateTo('feed')}>Photo Gallery</button>
+              {isStaff && <button id="nav-user-management" className={navClass('admin')} onClick={() => navigateTo('admin')}>User Management</button>}
+              {isStaff && <button id="nav-image-moderation" className={navClass('moderation')} onClick={() => navigateTo('moderation')}>Images Moderation</button>}
             </nav>            
-            <button className={navClass('profile')} onClick={() => navigateTo('profile')}>My Profile Management</button>
-            <button className="logout-button" onClick={handleLogout}>Log out</button>
+            <button id="nav-profile" className={navClass('profile')} onClick={() => navigateTo('profile')}>My Profile Management</button>
+            <button id="nav-logout" className="logout-button" onClick={handleLogout}>Log out</button>
           </div>
           {selectedPhotoId ? (
             <PhotoPage photoId={selectedPhotoId} onBack={() => setSelectedPhotoId(null)} onProfileSelect={openProfile} />

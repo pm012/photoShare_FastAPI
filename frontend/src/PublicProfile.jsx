@@ -37,7 +37,7 @@ function PublicProfile({ username, onPhotoSelect, onBack }) {
         return () => window.clearTimeout(request);
     }, [username]);
 
-    const backButton = <button className="btn btn-secondary pr-back" type="button" onClick={onBack}>← Back</button>;
+    const backButton = <button id="public-profile-back" className="btn btn-secondary pr-back" type="button" onClick={onBack}>← Back</button>;
 
     if (loading) return <main className="public-profile-page"><div className="feed-status" role="status">Loading profile...</div></main>;
     if (error) return <main className="public-profile-page">{backButton}<p className="error-message" role="alert">{error}</p></main>;
