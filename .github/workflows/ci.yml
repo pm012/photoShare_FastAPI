@@ -32,7 +32,8 @@ jobs:
       run: poetry lock
 
     - name: Install dependencies
-      run: poetry install --no-interaction
+      # Forces Poetry to install pytest and other dev tools needed for testing
+      run: poetry install --no-interaction --with dev
 
     - name: Run Pytest
       env:
