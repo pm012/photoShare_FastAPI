@@ -35,8 +35,19 @@ jobs:
         poetry run pip install --upgrade pip
         poetry install --no-interaction
 
-    - name: Run Pytest
+    - name: Run Pytest      
       env:
-        PYTHONPATH: .
-      # Explicitly triggers the pytest binary built inside your poetry environment
+          PYTHONPATH: .
+          # Mock settings to prevent Pydantic initialization failures in CI
+          SECRET_KEY: a_very_long_mock_secret_key_string_for_testing_purposes
+          ALGORITHM: HS256
+          MAIL_USERNAME: test@example.com
+          MAIL_PASSWORD: mockpassword
+          MAIL_FROM: test@example.com
+          MAIL_PORT: 587
+          MAIL_SERVER: ://example.com
+          CLOUDINARY_NAME: mock_cloud
+          CLOUDINARY_API_KEY: 123456789
+          CLOUDINARY_API_SECRET: mock_secret
+          REDIS_URL: redis://localhost:6379/0
       run: poetry run pytest -v
