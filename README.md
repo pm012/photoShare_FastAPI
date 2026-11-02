@@ -202,3 +202,20 @@ poetry run pytest -v
 1. **Rate limiting (Slowapi):** Content creation endpoints (photos, comments, ratings, and search) and authentication endpoints are rate-limited through Redis sessions to help mitigate DDoS attacks and brute-force attempts.
 2. **Email verification:** Two-step registration uses verification tokens. The full password recovery flow is available (`/request_password_reset` and `/reset_password/{token}`).
 3. **Docker security:** The final `Dockerfile` is based on a hardened Alpine image, upgrades system components to address High/Critical vulnerabilities, and uses `.dockerignore` to minimize image size.
+
+
+# PlayWright tests
+
+To launch tests in headed mode (with browser on foreground) run:
+```bash
+poetry run pytest tests/ui/ -v --headed
+```
+
+To launch tests in headless mode (with browser on background) run:
+
+```bash
+poetry run playwright codegen http://localhost:8000
+```
+
+
+

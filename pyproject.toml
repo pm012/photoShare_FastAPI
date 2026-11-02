@@ -37,13 +37,17 @@ dev = [
     "pytest (>=9.1.1,<10.0.0)",
     "pytest-asyncio (>=1.4.0,<2.0.0)",
     "httpx (>=0.28.1,<0.29.0)",
-    "pytest-cov (>=7.1.0,<8.0.0)"
+    "pytest-cov (>=7.1.0,<8.0.0)",
+    "pytest-playwright (>=0.10.0,<0.11.0)"
 ]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+testpaths = ["tests"]
+# Binds the sub-directory conftest module cleanly into python import notation
+#pytest_plugins = ["tests.ui.conftest"]
 asyncio_mode = "auto"
-# Додаємо автоматичний запуск ковереджу для папки src та генерацію HTML-звіту
+# Add automatic launch of the coverage for the src folder and generation of HTML-report
 addopts = "--cov=src --cov-report=term-missing --cov-report=html"
 filterwarnings = [
     "ignore:.*Using .httpx. with .starlette.testclient. is deprecated.*",
