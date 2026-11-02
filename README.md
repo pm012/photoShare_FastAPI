@@ -208,7 +208,12 @@ poetry run pytest -v
 
 To launch tests in headed mode (with browser on foreground) run:
 ```bash
-poetry run pytest tests/ui/ -v --headed
+#poetry run pytest tests/ui/ -v --headed
+#   |
+#   v
+# Temporary solution 
+PYTHONPATH=. poetry run pytest tests/ui/ -v --headed
+
 ```
 
 To launch tests in headless mode (with browser on background) run:

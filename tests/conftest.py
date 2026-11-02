@@ -63,7 +63,3 @@ def client(db_session, monkeypatch):
         yield test_client
         
     app.dependency_overrides.clear()
-
-pytest_plugins = [
-    "tests.ui.conftest"
-]

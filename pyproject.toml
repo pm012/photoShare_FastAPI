@@ -45,7 +45,6 @@ dev = [
 pythonpath = ["."]
 testpaths = ["tests"]
 # Binds the sub-directory conftest module cleanly into python import notation
-#pytest_plugins = ["tests.ui.conftest"]
 asyncio_mode = "auto"
 # Add automatic launch of the coverage for the src folder and generation of HTML-report
 addopts = "--cov=src --cov-report=term-missing --cov-report=html"
