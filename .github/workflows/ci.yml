@@ -1,5 +1,8 @@
 name: CI Pipeline
 
+# Unit tests only. This is the job to mark as "required" in branch protection.
+# Browser (UI) tests run in a separate workflow (e2e.yml, added in step 5).
+
 on:
   push:
     branches: [ main ]
@@ -26,17 +29,8 @@ jobs:
         virtualenvs-create: true
         virtualenvs-in-project: true
 
-    - name: Force Lock Synchronization
-      run: poetry lock
-
-    - name: Install dependencies
-      run: |
-        poetry run pip install --upgrade pip
-        poetry install --with dev --no-interaction
-
-    - name: Install Playwright Browsers
-      # Downloads the headless browser binaries inside the GitHub runner environment
-      run: poetry run playwright install --with-deps chromium
+    - name: Install dependencies (unit-test group only, no Playwright)
+      run: poetry install --with dev --no-interaction
 
     - name: Run Pytest
       env:
@@ -48,7 +42,7 @@ jobs:
         MAIL_PASSWORD: mockpassword
         MAIL_FROM: test@example.com
         MAIL_PORT: 587
-        MAIL_SERVER: ://example.com
+        MAIL_SERVER: smtp.example.com
         CLOUDINARY_NAME: mock_cloud
         CLOUDINARY_API_KEY: 123456789
         CLOUDINARY_API_SECRET: mock_secret
