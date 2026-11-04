@@ -1,0 +1,43 @@
+name: E2E UI Tests
+on:
+  workflow_dispatch:
+  schedule: [{ cron: '0 3 * * *' }]
+  pull_request:
+    branches: [main]
+    paths: ['frontend/**', 'src/**', 'tests/ui/**', 'pyproject.toml']
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_PASSWORD: e2e, POSTGRES_DB: photoshare_e2e }
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U postgres" --health-interval 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.14' }
+      - uses: snok/install-poetry@v1
+        with: { version: '2.4.2', virtualenvs-in-project: true }
+      - run: poetry install --with dev,e2e --no-interaction
+      - run: poetry run playwright install --with-deps chromium
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: frontend/package-lock.json }
+      - run: cd frontend && npm ci && VITE_API_URL=http://localhost:8000/api npm run build
+      - name: Start stack
+        run: |
+          poetry run alembic upgrade head
+          poetry run python main.py &
+          (cd frontend && npx vite preview --port 5173 --strictPort) &
+          npx wait-on http://localhost:8000/health http://localhost:5173
+        env: { DATABASE_URL: "postgresql+psycopg2://postgres:e2e@localhost:5432/photoshare_e2e" }  # + the rest of your env
+      - run: poetry run pytest tests/ui -v --tracing retain-on-failure --screenshot only-on-failure
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: e2e-traces, path: test-results/ }
