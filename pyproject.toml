@@ -38,16 +38,25 @@ dev = [
     "pytest-asyncio (>=1.4.0,<2.0.0)",
     "httpx (>=0.28.1,<0.29.0)",
     "pytest-cov (>=7.1.0,<8.0.0)",
-    "pytest-playwright (>=0.10.0,<0.11.0)"
 ]
+# Browser (UI) tests live in their own group, so the unit-test CI job never
+# downloads Playwright. Install with: poetry install --with dev,e2e
+e2e = [
+    "pytest-playwright (>=0.10.0,<0.11.0)",
+    "pytest-xdist (>=3.8.0,<4.0.0)",
+]
+
+[tool.poetry.group.e2e]
+optional = true
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
 # Binds the sub-directory conftest module cleanly into python import notation
 asyncio_mode = "auto"
-# Add automatic launch of the coverage for the src folder and generation of HTML-report
-addopts = "--cov=src --cov-report=term-missing --cov-report=html"
+# Automatic launch of the coverage for the src folder and generation of HTML-report
+# tests/ui is a separate suite with its own tests/ui/pytest.ini (needs a running stack).
+addopts = "--cov=src --cov-report=term-missing --cov-report=html --ignore=tests/ui"
 filterwarnings = [
     "ignore:.*Using .httpx. with .starlette.testclient. is deprecated.*",
     "ignore:.*The anyio.abc.BlockingPortal alias is deprecated.*",
@@ -57,6 +66,5 @@ filterwarnings = [
 
 [tool.poetry]
 package-mode = false
-
 
 

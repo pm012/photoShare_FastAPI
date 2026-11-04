@@ -204,23 +204,30 @@ poetry run pytest -v
 3. **Docker security:** The final `Dockerfile` is based on a hardened Alpine image, upgrades system components to address High/Critical vulnerabilities, and uses `.dockerignore` to minimize image size.
 
 
-# PlayWright tests
+# UI tests (Playwright + Python) (TODO implementation is under development)
 
-To launch tests in headed mode (with browser on foreground) run:
-```bash
-#poetry run pytest tests/ui/ -v --headed
-#   |
-#   v
-# Temporary solution 
-PYTHONPATH=. poetry run pytest tests/ui/ -v --headed
+UI tests are a separate suite in `tests/ui/` with its own `tests/ui/pytest.ini`. They are
+**not** collected by the normal `poetry run pytest` and never run in the `CI Pipeline` workflow.
 
-```
-
-To launch tests in headless mode (with browser on background) run:
+One-time setup:
 
 ```bash
-poetry run playwright codegen http://localhost:8000
+poetry install --with dev,e2e
+poetry run playwright install chromium
+cp tests/ui/.env.e2e.sample tests/ui/.env.e2e      # then edit if your URLs differ
 ```
 
+Run (the application must already be running):
+
+```bash
+poetry run pytest tests/ui -m framework        # self-checks, no stack needed
+poetry run pytest tests/ui -m smoke            # stack is up and the login page renders
+poetry run pytest tests/ui                     # everything (headless is the default)
+poetry run pytest tests/ui --headed --slowmo 300   # watch the browser
+poetry run playwright codegen http://localhost:5173  # recorder, only to discover locators
+```
+
+Failure artifacts (trace, screenshot) are written to `test-results/`; open a trace with
+`poetry run playwright show-trace test-results/<test>/trace.zip`.
 
 
