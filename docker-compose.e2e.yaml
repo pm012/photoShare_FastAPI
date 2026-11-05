@@ -1,0 +1,94 @@
+# Disposable stack for UI tests. Separate ports from the dev stack (docker-compose.yaml),
+# no volumes: everything is wiped by `docker compose -f docker-compose.e2e.yaml down -v`.
+#
+#   up:    docker compose -f docker-compose.e2e.yaml up -d --build
+#   down:  docker compose -f docker-compose.e2e.yaml down -v
+#
+# frontend http://localhost:5183 | backend http://localhost:8010 | postgres :5434 | redis :6380
+name: photoshare-e2e
+
+x-app-env: &app_env
+  DATABASE_URL: postgresql+psycopg2://postgres:e2e_password@db:5432/photoshare_e2e
+  SECRET_KEY: e2e_secret_key_not_used_anywhere_else_1234567890
+  ALGORITHM: HS256
+  ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+  PUBLIC_API_URL: http://localhost:8010
+  FRONTEND_URL: http://localhost:5183
+  MAX_UPLOAD_SIZE_BYTES: "10485760"
+  MAX_AVATAR_SIZE_BYTES: "3145728"
+  CLOUDINARY_NAME: e2e
+  CLOUDINARY_API_KEY: e2e
+  CLOUDINARY_API_SECRET: e2e
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: e2e_redis_password
+  MAIL_USERNAME: e2e@example.com
+  MAIL_PASSWORD: e2e
+  MAIL_FROM: e2e@example.com
+  MAIL_PORT: "465"
+  MAIL_SERVER: smtp.example.com
+  MAIL_CONFIRMATION_REQUIRED: "false"
+  E2E_MODE: "true"
+  E2E_MEDIA_DIR: /tmp/e2e-media
+  PORT: "8000"
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: e2e_password
+      POSTGRES_DB: photoshare_e2e
+    ports:
+      - "5434:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d photoshare_e2e"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--requirepass", "e2e_redis_password"]
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "e2e_redis_password", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # One-shot job: applies Alembic migrations, then exits.
+  migrate:
+    build: .
+    image: photoshare-e2e-web
+    command: ["sh", "-c", "alembic upgrade head || poetry run alembic upgrade head"]
+    environment: *app_env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    build: .
+    image: photoshare-e2e-web
+    ports:
+      - "8010:8000"
+    environment: *app_env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:8010/api
+    ports:
+      - "5183:80"
+    depends_on:
+      - web

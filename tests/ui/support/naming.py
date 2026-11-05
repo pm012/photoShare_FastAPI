@@ -19,6 +19,11 @@ class Namer:
         self.worker = os.environ.get("PYTEST_XDIST_WORKER", "m")
         self._counter = itertools.count(1)
 
+    @property
+    def prefix(self) -> str:
+        """Every name created by this session starts with this (used for the final sweep)."""
+        return f"e2e_{self.run}{self.worker}_"
+
     def _next(self, label: str) -> str:
         return f"e2e_{self.run}{self.worker}_{next(self._counter)}_{label}"[:40]
 

@@ -18,9 +18,9 @@ LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", "db", "postgres"}
 
 
 class E2ESettings(BaseSettings):
-    base_url: str = "http://localhost:5173"
-    api_url: str = "http://localhost:8000/api"
-    database_url: str | None = None
+    base_url: str = "http://localhost:5183"  # docker-compose.e2e.yaml
+    api_url: str = "http://localhost:8010/api"
+    database_url: str | None = "postgresql+psycopg2://postgres:e2e_password@localhost:5434/photoshare_e2e"
     # Set to true only for a dedicated, disposable remote database (e.g. a CI service).
     allow_remote_db: bool = False
 

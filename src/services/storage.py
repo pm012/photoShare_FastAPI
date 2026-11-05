@@ -1,12 +1,16 @@
 import cloudinary
 import cloudinary.uploader
 from fastapi import UploadFile, HTTPException, status
+from src.conf.config import settings
 
 # NB:: configuring  cloudinary.config() ussually is performed
 # in your configuration file (config.py) or main.py via environmental variables.
 # If it has already been configured in other modules, there's no need to configure it again.
 
 async def save_avatar_to_cloudinary(file: UploadFile, user_id: int) -> str:
+    if settings.E2E_MODE:
+        from src.services.e2e import save_fake_avatar
+        return save_fake_avatar(file, user_id)
     try:
         # Upload to Cloudinary with avatar-specific optimization.
         response = cloudinary.uploader.upload(
@@ -30,6 +34,10 @@ async def save_avatar_to_cloudinary(file: UploadFile, user_id: int) -> str:
         )
 
 def delete_avatar_from_cloudinary(user_id: int) -> None:
+    if settings.E2E_MODE:
+        from src.services.e2e import delete_fake_avatar
+        delete_fake_avatar(user_id)
+        return
     try:
         # Deleting the file by its public_id
         public_id = f"photoshare/avatars/user_{user_id}_avatar"

@@ -33,6 +33,10 @@ def test_guard_rejects_remote_host_unless_allowed():
     assert assert_safe_database(url, allow_remote=True) == url
 
 
+def test_default_database_url_matches_the_compose_file_and_passes_the_guard():
+    assert assert_safe_database(E2ESettings().database_url)
+
+
 def test_backend_url_strips_api_prefix():
     assert E2ESettings(api_url="http://localhost:8000/api").backend_url == "http://localhost:8000"
     assert E2ESettings(api_url="http://localhost:8000/api/").backend_url == "http://localhost:8000"

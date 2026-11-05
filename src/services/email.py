@@ -26,6 +26,8 @@ def create_email_token(data: dict):
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 async def send_verification_email(email: EmailStr, username: str, host: str):
+    if settings.E2E_MODE:  # UI tests never send real e-mail
+        return
     token = create_email_token({"sub": email})
     verification_url = f"{host}api/auth/confirmed/{token}"
 
@@ -48,6 +50,8 @@ async def send_verification_email(email: EmailStr, username: str, host: str):
     await fm.send_message(message)
     
 async def send_reset_password_email(email: EmailStr, username: str, host: str):
+    if settings.E2E_MODE:  # UI tests never send real e-mail
+        return
     # Generate token for password reset
     to_encode = {"sub": email, "exp": datetime.now(timezone.utc) + timedelta(hours=1), "scope": "password_reset"}
     token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)

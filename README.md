@@ -231,3 +231,23 @@ Failure artifacts (trace, screenshot) are written to `test-results/`; open a tra
 `poetry run playwright show-trace test-results/<test>/trace.zip`.
 
 
+## Run the UI tests locally (Update 05.11.2026)
+
+```bash
+# 1. disposable stack: own ports, own database, nothing persisted
+docker compose -f docker-compose.e2e.yaml up -d --build
+#    frontend :5183 | backend :8010 | postgres :5434 | redis :6380
+
+# 2. tests (defaults already point at that stack)
+poetry run pytest tests/ui -m "smoke or auth"
+poetry run pytest tests/ui --headed --slowmo 300 -k logout
+
+# 3. throw everything away
+docker compose -f docker-compose.e2e.yaml down -v
+```
+
+Safety nets, in order: the backend refuses `E2E_MODE=true` unless its database name ends with `_e2e`;
+the test run refuses to start unless the backend reports e2e mode and the same database it seeds;
+each test deletes the data it created; the session sweeps anything left with its name prefix.
+
+

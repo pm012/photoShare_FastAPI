@@ -46,4 +46,9 @@ class CloudinaryService:
         url = cloudinary.CloudinaryImage(public_id).build_url(transformation=transformation_options)
         return url
 
-cloudinary_service = CloudinaryService()
+if settings.E2E_MODE:
+    # UI tests: files are kept in a local folder and served by the backend itself.
+    from src.services.e2e import FakeCloudinaryService
+    cloudinary_service = FakeCloudinaryService()
+else:
+    cloudinary_service = CloudinaryService()

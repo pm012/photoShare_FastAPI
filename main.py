@@ -47,6 +47,11 @@ app.include_router(users.router, prefix="/api")
 app.include_router(ratings.router, prefix="/api")
 app.include_router(search.router, prefix="/api")
 
+if settings.E2E_MODE:
+    # Only for UI tests: /e2e/info and a folder with fake uploaded images (/e2e-media).
+    from src.services.e2e import install_e2e_routes
+    install_e2e_routes(app)
+
 @app.get("/", tags=["root"])
 def root():
     return {"message": "Welcome to PhotoShare (PhotoShare REST API)"}
