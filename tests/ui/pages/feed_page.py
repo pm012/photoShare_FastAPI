@@ -1,3 +1,5 @@
+from urllib.parse import parse_qs, urlsplit
+
 from playwright.sync_api import Page, Response, expect
 
 from .base_page import BasePage
@@ -7,6 +9,16 @@ from .components.upload_dialog import UploadDialog
 
 def _is_photo_search(response: Response) -> bool:
     return "/search/photos" in response.url and response.request.method == "GET"
+
+
+def _search_with(param: str, text: str):
+    """Predicate: a photo-search response whose query string has <param>=<text> (or no <param>)."""
+    def predicate(response: Response) -> bool:
+        if not _is_photo_search(response):
+            return False
+        value = parse_qs(urlsplit(response.url).query).get(param, [""])[0]
+        return value == text
+    return predicate
 
 
 class PhotoFeedPage(BasePage):
@@ -28,6 +40,8 @@ class PhotoFeedPage(BasePage):
         self.cards = page.locator("article[id^='photo-card-']")
         self.skeletons = page.locator(".photo-card--skeleton")
         self.empty_state = page.locator(".feed-status")
+        self.empty_reset_button = self.by_id("feed-empty-reset-filters")
+        self.page_label = page.get_by_label("Pagination").locator("span")
         self.lightbox = self.by_id("photo-lightbox-dialog")
         self.lightbox_close = self.by_id("photo-lightbox-close")
         # names used by the first tests
@@ -47,14 +61,36 @@ class PhotoFeedPage(BasePage):
         return self.page.expect_response(_is_photo_search)
 
     # ---- actions ----------------------------------------------------------------
-    def search(self, text: str, field: str | None = None) -> None:
-        """Type into the search box (350 ms debounce) and wait for the resulting request.
-        `field` = "description" | "tag". Note: typing the same text again sends no request."""
-        if field:
-            self.search_field.select_option(field)
-        with self.reload_results():
+    def search(self, text: str, field: str = "description") -> None:
+        """Choose the search field ("description" | "tag"), type `text` (350 ms debounce) and wait for
+        the response that carries exactly this search. Typing the text that is already there sends no request."""
+        self.search_field.select_option(field)
+        param = "keyword" if field == "description" else "tag"
+        with self.page.expect_response(_search_with(param, text)):
             self.search_input.fill(text)
         self.wait_until_loaded()
+
+    def set_min_rating(self, value: str) -> None:
+        """value = "" (any) | "4" | "3" | "2" """
+        with self.reload_results():
+            self.min_rating.select_option(value)
+        self.wait_until_loaded()
+
+    def go_next(self) -> None:
+        with self.reload_results():
+            self.next_page.click()
+        self.wait_until_loaded()
+
+    def go_previous(self) -> None:
+        with self.reload_results():
+            self.previous_page.click()
+        self.wait_until_loaded()
+
+    def card_ids(self) -> list[int]:
+        return [int(card.get_attribute("id").removeprefix("photo-card-")) for card in self.cards.all()]
+
+    def card_rating(self, photo_id: int):
+        return self.card(photo_id).locator(".photo-rating")
 
     def sort_by(self, option: str) -> None:
         """option = "date" | "rating" """

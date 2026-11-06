@@ -14,7 +14,9 @@ import pytest
 from tests.ui.config import E2ESettings, assert_safe_database, get_settings
 from tests.ui.support.api import Api
 from tests.ui.support.db import Database, DataFactory
+from tests.ui.support.images import make_image, make_large_png
 from tests.ui.support.naming import Namer
+from tests.ui.support.tokens import password_reset_token
 from tests.ui.support.stack import StackError, wait_for_stack
 
 
@@ -97,11 +99,45 @@ def open_as(new_context, api: Api):
     """
     from playwright.sync_api import expect  # local import keeps module import light
 
-    def _open(user, path: str = "/"):
+    def _open(user, path: str = "/", *, fake_clock: bool = False):
         context = new_context(storage_state=api.storage_state(user.email, user.password))
         page = context.new_page()
+        if fake_clock:  # lets a test jump forward in time (inactivity timeout)
+            page.clock.install()
         page.goto(path)
         expect(page.get_by_test_id("nav-logout")).to_be_visible()
         return page
 
     return _open
+
+
+# ----------------------------------------------------------------------------- files and tokens
+@pytest.fixture
+def png_file(tmp_path):
+    return make_image(tmp_path / "photo.png", "PNG")
+
+
+@pytest.fixture
+def text_file(tmp_path):
+    path = tmp_path / "notes.txt"
+    path.write_text("this is not an image")
+    return path
+
+
+@pytest.fixture
+def fake_png_file(tmp_path):
+    """Named .png (so the browser reports image/png) but the content is plain text."""
+    path = tmp_path / "broken.png"
+    path.write_text("definitely not a png")
+    return path
+
+
+@pytest.fixture
+def large_png_file(tmp_path):
+    return make_large_png(tmp_path / "large.png")
+
+
+@pytest.fixture
+def reset_token(settings):
+    """reset_token(email) -> the token a "forgot password" e-mail would carry."""
+    return lambda email: password_reset_token(email, settings.secret_key, settings.algorithm)

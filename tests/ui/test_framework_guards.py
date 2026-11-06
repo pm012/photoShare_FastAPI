@@ -2,7 +2,9 @@
 import pytest
 
 from tests.ui.config import E2ESettings, assert_safe_database
+from tests.ui.support.images import make_image, make_large_png
 from tests.ui.support.naming import Namer
+from tests.ui.support.tokens import password_reset_token
 
 pytestmark = pytest.mark.framework
 
@@ -49,3 +51,20 @@ def test_namer_is_unique_and_within_model_limits():
     assert all(len(namer.username("x" * 60)) <= 50 for _ in range(3))
     assert len(namer.tag("y" * 60)) <= 30
     assert "_" not in namer.word()
+
+
+def test_generated_images_are_real_images_of_the_right_size(tmp_path):
+    from PIL import Image
+
+    small = make_image(tmp_path / "a.png")
+    with Image.open(small) as image:
+        assert image.format == "PNG"
+    assert make_large_png(tmp_path / "big.png").stat().st_size > 3 * 1024 * 1024  # above the 3 MB avatar limit
+
+
+def test_reset_token_has_the_payload_the_backend_expects():
+    import jwt
+
+    token = password_reset_token("a@example.com", "s" * 32, "HS256")
+    payload = jwt.decode(token, "s" * 32, algorithms=["HS256"])
+    assert payload["sub"] == "a@example.com" and payload["scope"] == "password_reset" and "exp" in payload

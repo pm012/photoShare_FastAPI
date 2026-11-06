@@ -1,4 +1,4 @@
-from playwright.sync_api import Locator, Page
+from playwright.sync_api import Locator, Page, expect
 
 from .base_page import BasePage
 
@@ -16,6 +16,13 @@ class ModerationPage(BasePage):
         self.next_page = self.by_id("moderation-next-page")
         self.previous_page = self.by_id("moderation-previous-page")
         self.dialog_close = self.by_id("moderation-dialog-close")
+        self.creator_chip = page.locator(".mo-chip")
+        self.rows = page.locator("table.mo-table tbody tr")
+        self.empty_state = page.locator(".feed-status")
+        self.section_title = page.locator(".mo-section-header h3")
+
+    def row_of(self, photo_id: int) -> Locator:
+        return self.page.get_by_role("row").filter(has=self.photo_image(photo_id))
 
     def pick_creator(self, user_id: int, typed: str) -> None:
         self.creator_search.fill(typed)
@@ -27,7 +34,10 @@ class ModerationPage(BasePage):
     def open_photo(self, photo_id: int) -> Locator:
         """Opens the moderation dialog and returns it."""
         self.by_id(f"moderation-photo-{photo_id}-open").click()
-        return self.dialog(photo_id)
+        dialog = self.dialog(photo_id)
+        # comments and ratings load separately; wait until both are in, so banners are unambiguous
+        expect(dialog.get_by_text("Loading")).to_have_count(0)
+        return dialog
 
     def dialog(self, photo_id: int) -> Locator:
         return self.by_id(f"moderation-photo-{photo_id}-dialog")

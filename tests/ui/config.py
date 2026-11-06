@@ -21,6 +21,10 @@ class E2ESettings(BaseSettings):
     base_url: str = "http://localhost:5183"  # docker-compose.e2e.yaml
     api_url: str = "http://localhost:8010/api"
     database_url: str | None = "postgresql+psycopg2://postgres:e2e_password@localhost:5434/photoshare_e2e"
+    # Must equal SECRET_KEY / ALGORITHM of the e2e backend (see docker-compose.e2e.yaml). The tests use
+    # them to build password-reset links, which in real life arrive by e-mail.
+    secret_key: str = "e2e_secret_key_not_used_anywhere_else_1234567890"
+    algorithm: str = "HS256"
     # Set to true only for a dedicated, disposable remote database (e.g. a CI service).
     allow_remote_db: bool = False
 

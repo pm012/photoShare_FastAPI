@@ -14,6 +14,10 @@ class PhotoPageView(BasePage):
         self.description_input = self.by_id("photo-description")
         self.tags_input = self.by_id("photo-tags")
         self.score = page.locator(".pd-score")
+        self.heading = page.locator(".pd-card h2")
+        self.manage_section = page.get_by_role("heading", name="Manage photo")
+        self.rating_hint = page.locator(".pd-hint").first
+        self.comment_count = page.locator(".pd-count")
         self.edit_details_button = self.by_id("photo-details-edit")
         self.save_details_button = self.by_id("photo-details-save")
         self.cancel_details_button = self.by_id("photo-details-cancel")
@@ -44,6 +48,10 @@ class PhotoPageView(BasePage):
         if tags is not None:
             self.tags_input.fill(tags)
 
+    def choose_preset(self, preset: str) -> None:
+        """preset = "thumbnail" | "avatar" | "black_white" """
+        self.transform_preset.select_option(preset)
+
     def delete_photo(self) -> None:
         self.click_and_confirm(self.delete_button)
 
@@ -55,6 +63,9 @@ class PhotoPageView(BasePage):
     def add_comment(self, text: str) -> None:
         self.comment_input.fill(text)
         self.comment_submit.click()
+
+    def comment_author_link(self, comment_id: int):
+        return self.by_id(f"photo-comment-{comment_id}-author")
 
     def comment_edit_button(self, comment_id: int):
         return self.by_id(f"photo-comment-{comment_id}-edit")

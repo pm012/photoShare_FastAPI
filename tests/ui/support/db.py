@@ -150,6 +150,20 @@ class DataFactory:
             s.commit()
             return row.id
 
+    def update_user(self, user_id: int, **fields) -> None:
+        """Change a seeded user directly in the DB, e.g. update_user(id, role="moderator", is_active=False)."""
+        with self.db.session() as s:
+            row = s.get(self.db.m.User, user_id)
+            if "role" in fields:
+                fields["role"] = self.db.m.UserRole(fields["role"])
+            for key, value in fields.items():
+                setattr(row, key, value)
+            s.commit()
+
+    def track_tag(self, name: str) -> None:
+        """Register a tag that the UI created, so it is removed (if orphaned) afterwards."""
+        self._new_tags.add(name)
+
     def track_username(self, username: str) -> None:
         """Register an account that the UI created (e.g. sign-up test) so it is deleted afterwards."""
         self._usernames.append(username)
@@ -172,6 +186,12 @@ class DataFactory:
             if row is None:
                 return None
             return {"id": row.id, "description": row.description, "tags": sorted(t.name for t in row.tags)}
+
+    def photos_of(self, user_id: int) -> list[dict]:
+        m = self.db.m
+        with self.db.session() as s:
+            rows = s.query(m.Photo).filter_by(user_id=user_id).order_by(m.Photo.id).all()
+            return [{"id": r.id, "description": r.description, "url": r.url, "tags": sorted(t.name for t in r.tags)} for r in rows]
 
     def comments_of(self, photo_id: int) -> list[str]:
         m = self.db.m

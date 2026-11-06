@@ -19,6 +19,9 @@ class AdminPage(BasePage):
         self.previous_page = self.by_id("admin-previous-page")
         self.table = page.locator("table.ad-table")
         self.access_denied = page.get_by_role("alert")
+        self.rows = page.locator("table.ad-table tbody tr")
+        self.badge = page.locator(".ad-badge")
+        self.empty_state = page.locator(".feed-status")
 
     def search(self, text: str) -> None:
         self.search_input.fill(text)
@@ -41,6 +44,13 @@ class AdminPage(BasePage):
     def change_role(self, user_id: int, role: str) -> None:
         """role = "user" | "moderator" | "admin" """
         self.role_select(user_id).select_option(role)
+
+    def status_of(self, user_id: int) -> Locator:
+        return self.row(user_id).locator(".ad-status")
+
+    def go_next(self) -> None:
+        with self.page.expect_response(_is_user_search):
+            self.next_page.click()
 
     def toggle_ban(self, user_id: int) -> None:
         self.ban_button(user_id).click()
