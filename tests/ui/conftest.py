@@ -8,8 +8,15 @@ Fixture map
   data                          factory for users/photos/comments/ratings; cleans up after each test
   open_as(user)                 opens the app already logged in as `user` (token injected, no login form)
   page / new_context / ...      from pytest-playwright (fresh browser context per test)
+
+Parallel runs (pytest -n 4): every xdist worker is a separate pytest session with its own browser,
+`namer` (names contain the worker id), `db` connection, `anchor_user` and sweep. Tests must therefore
+create their own data and filter shared lists by a unique keyword / creator (see README_step4).
 """
+import os
+
 import pytest
+from playwright.sync_api import expect
 
 from tests.ui.config import E2ESettings, assert_safe_database, get_settings
 from tests.ui.support.api import Api
@@ -18,6 +25,37 @@ from tests.ui.support.images import make_image, make_large_png
 from tests.ui.support.naming import Namer
 from tests.ui.support.tokens import password_reset_token
 from tests.ui.support.stack import StackError, wait_for_stack
+
+
+# ----------------------------------------------------------------------------- start-up checks
+def _only_framework_tests(config) -> bool:
+    """True when the run selects nothing but the browser-less self-checks (no stack needed)."""
+    if (config.getoption("markexpr") or "").strip() == "framework":
+        return True
+    paths = [arg for arg in config.args if not str(arg).startswith("-")]
+    return bool(paths) and all("test_framework" in str(arg) for arg in paths)
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_sessionstart(session):
+    """Check the stack ONCE, before any xdist worker is started, so a missing stack gives one clear
+    message instead of one per worker. Workers skip this (they have `workerinput`)."""
+    config = session.config
+    if hasattr(config, "workerinput") or _only_framework_tests(config):
+        return
+    settings = get_settings()
+    base = config.getoption("base_url") or settings.base_url
+    try:
+        wait_for_stack(settings.backend_url, base, settings.database_url)
+    except StackError as exc:
+        pytest.exit(str(exc), returncode=2)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _expect_timeout():
+    """Auto-waiting assertions wait this long (ms). Parallel runs load the single backend harder, so
+    the default can be raised without touching tests: E2E_EXPECT_TIMEOUT=10000 pytest tests/ui -n 4"""
+    expect.set_options(timeout=float(os.environ.get("E2E_EXPECT_TIMEOUT", "7000")))
 
 
 # ----------------------------------------------------------------------------- configuration
