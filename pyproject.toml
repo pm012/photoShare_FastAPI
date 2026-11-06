@@ -38,6 +38,9 @@ dev = [
     "pytest-asyncio (>=1.4.0,<2.0.0)",
     "httpx (>=0.28.1,<0.29.0)",
     "pytest-cov (>=7.1.0,<8.0.0)",
+    "playwright (>=1.64.1,<2.0.0)",
+    "pytest-playwright (>=0.10.0,<0.11.0)",
+    "pytest-xdist (>=3.8.0,<4.0.0)",
 ]
 # Browser (UI) tests live in their own group, so the unit-test CI job never
 # downloads Playwright. Install with: poetry install --with dev,e2e
