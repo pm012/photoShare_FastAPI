@@ -7,8 +7,8 @@ from sqlalchemy.pool import StaticPool
 from main import app
 from src.database.db import get_db, Base
 from src.services.blacklist import blacklist_service
-from src.services.limiter import limiter  # Імпортуємо лімітер
-from src.services import email as service_email  # Імпортуємо сервіс імейлів
+from src.services.limiter import limiter  # Import the limiter to disable it during tests
+from src.services import email as service_email  # Import the email service to mock email sending
 from src.routes import auth as auth_route
 from src.conf.config import settings
 

@@ -1,5 +1,4 @@
-import pytest
-from tests.test_photos import VALID_IMAGE_BYTES, get_auth_headers, mock_cloudinary
+from tests.test_photos import VALID_IMAGE_BYTES, get_auth_headers
 
 def test_comment_lifecycle_and_rbac(client):
     # 1. Register and login Admin (ID 1)

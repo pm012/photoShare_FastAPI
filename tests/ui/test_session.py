@@ -30,7 +30,7 @@ def test_user_banned_while_logged_in_is_signed_out_on_the_next_request(open_as, 
 def test_deleted_user_is_signed_out_on_the_next_request(open_as, data):
     user = data.user()
     page = open_as(user)
-    data.cleanup()  # the account disappears while the browser is still logged in
+    data.cleanup()  # The account disappears while the browser is still logged in
 
     page.get_by_test_id("nav-profile").click()
 
