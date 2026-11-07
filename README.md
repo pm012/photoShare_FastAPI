@@ -1,5 +1,9 @@
-# PhotoShare REST API
-![Photo Share Tests](https://github.com/pm012/photoShare_FastAPI/actions/workflows/ci.yml/badge.svg)
+# PhotoShare FastAPI: REST API | React | Playwright
+- Unittests (Pytest) results: ![Photo Share Unit Tests](https://github.com/pm012/photoShare_FastAPI/actions/workflows/ci.yml/badge.svg)
+
+- UI tests (Playwright) results: ![Photo Share UI Tests](https://github.com/pm012/photoShare_FastAPI/actions/workflows/e2e.yml/badge.svg)
+
+
 
 
 PhotoShare is a modern, scalable REST API application inspired by photo-sharing platforms. It is built with **FastAPI** and follows the **Repository/Service** architectural pattern. The project supports role-based access control (RBAC), cloud media uploads to Cloudinary, automatic QR code generation, photo comments and ratings, and advanced search with dynamic filtering.
