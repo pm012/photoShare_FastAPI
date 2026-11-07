@@ -1,0 +1,71 @@
+name: Live Smoke (Render)
+
+# OPTIONAL. Read-only checks of the deployed application: wakes the sleeping backend, then verifies that the
+# site loads and that frontend -> backend -> database work. Creates no data. Never runs the tests/ui suite
+# against production (that suite seeds the database directly and needs E2E_MODE).
+#
+# One-time setup (Settings -> Secrets and variables -> Actions):
+#   Variables: LIVE_BASE_URL  = https://<your-static-site>.onrender.com
+#              LIVE_API_URL   = https://<your-backend>.onrender.com/api
+#   Secrets (optional): LIVE_SMOKE_EMAIL, LIVE_SMOKE_PASSWORD  - a dedicated REGULAR user created through the UI.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 5 * * *"          # daily, 05:30 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LIVE_BASE_URL: ${{ vars.LIVE_BASE_URL }}
+      LIVE_API_URL: ${{ vars.LIVE_API_URL }}
+      LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
+      LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
+    steps:
+      - name: Check configuration
+        run: |
+          if [ -z "$LIVE_BASE_URL" ] || [ -z "$LIVE_API_URL" ]; then
+            echo "::error::Set the repository variables LIVE_BASE_URL and LIVE_API_URL first."
+            exit 1
+          fi
+
+      - name: Wake up the backend (free Render services sleep when idle)
+        run: |
+          root="${LIVE_API_URL%/}"; root="${root%/api}"
+          curl --fail --silent --show-error --max-time 60 \
+               --retry 30 --retry-delay 10 --retry-all-errors "$root/health"; echo
+
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: "2.4.2"
+          virtualenvs-in-project: true
+
+      - name: Install dependencies and Chromium
+        run: |
+          poetry install --with dev,e2e --no-interaction
+          poetry run playwright install --with-deps chromium
+
+      - name: Run live smoke tests
+        run: poetry run pytest tests/live -ra
+
+      - name: Upload traces and screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-smoke-results
+          path: test-results-live/
+          if-no-files-found: ignore
+          retention-days: 14

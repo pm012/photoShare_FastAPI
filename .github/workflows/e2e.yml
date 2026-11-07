@@ -1,43 +1,209 @@
-name: E2E UI Tests
+name: UI Tests (Playwright)
+
+# Separate from "CI Pipeline" on purpose: a failure here never blocks a merge unless you add
+# "ui-tests" to the required status checks in the branch protection rules (do not, at least at first).
+#
+# Where it runs:  nightly | on pull requests that touch app or test code | manually (Actions tab -> Run workflow)
+# What it builds: Postgres + Redis as service containers, the backend straight from the checked-out commit
+#                 (uvicorn, E2E_MODE=true) and the frontend (vite build + preview). No Docker image build.
+
 on:
   workflow_dispatch:
-  schedule: [{ cron: '0 3 * * *' }]
+    inputs:
+      workers:
+        description: "pytest-xdist workers (0 = run sequentially)"
+        default: "2"
+      pytest_args:
+        description: "Extra pytest arguments, e.g.  -m smoke   or   -k moderation"
+        default: ""
+  schedule:
+    - cron: "0 3 * * *"          # every night, 03:00 UTC (runs on the default branch only)
   pull_request:
-    branches: [main]
-    paths: ['frontend/**', 'src/**', 'tests/ui/**', 'pyproject.toml']
+    branches: [ main ]
+    paths:
+      - "src/**"
+      - "main.py"
+      - "frontend/**"
+      - "tests/ui/**"
+      - "pyproject.toml"
+      - "poetry.lock"
+      - ".github/workflows/e2e.yml"
+
+concurrency:
+  group: ui-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  e2e:
+  ui-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      issues: write              # only used to open an issue when the NIGHTLY run fails
+
     services:
       postgres:
-        image: postgres:16-alpine
-        env: { POSTGRES_PASSWORD: e2e, POSTGRES_DB: photoshare_e2e }
-        ports: ['5432:5432']
-        options: --health-cmd "pg_isready -U postgres" --health-interval 5s --health-retries 10
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: e2e_password
+          POSTGRES_DB: photoshare_e2e
+        ports: [ "5432:5432" ]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d photoshare_e2e"
+          --health-interval 5s --health-timeout 5s --health-retries 15
       redis:
         image: redis:7-alpine
-        ports: ['6379:6379']
+        ports: [ "6379:6379" ]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 15
+
+    env:
+      # What the TEST process needs (defaults in tests/ui/config.py already match, kept explicit for clarity).
+      E2E_BASE_URL: http://localhost:5183
+      E2E_API_URL: http://localhost:8010/api
+      E2E_DATABASE_URL: postgresql+psycopg2://postgres:e2e_password@localhost:5432/photoshare_e2e
+      E2E_EXPECT_TIMEOUT: "10000"    # shared runners are slower than a laptop
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.14' }
-      - uses: snok/install-poetry@v1
-        with: { version: '2.4.2', virtualenvs-in-project: true }
-      - run: poetry install --with dev,e2e --no-interaction
-      - run: poetry run playwright install --with-deps chromium
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm, cache-dependency-path: frontend/package-lock.json }
-      - run: cd frontend && npm ci && VITE_API_URL=http://localhost:8000/api npm run build
-      - name: Start stack
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        id: py
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: "2.4.2"
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache virtualenv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-py${{ steps.py.outputs.python-version }}-${{ hashFiles('poetry.lock') }}
+
+      - name: Install Python dependencies (unit-test + e2e groups)
+        run: poetry install --with dev,e2e --no-interaction
+
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+
+      - name: Install Chromium
+        run: |
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
+            poetry run playwright install-deps chromium      # system libraries only
+          else
+            poetry run playwright install --with-deps chromium
+          fi
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          VITE_API_URL: http://localhost:8010/api
+        run: |
+          npm ci
+          npm run build
+
+      - name: Start backend (migrations + uvicorn in E2E mode)
+        env:
+          DATABASE_URL: postgresql+psycopg2://postgres:e2e_password@localhost:5432/photoshare_e2e
+          SECRET_KEY: e2e_secret_key_not_used_anywhere_else_1234567890
+          ALGORITHM: HS256
+          ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+          PUBLIC_API_URL: http://localhost:8010
+          FRONTEND_URL: http://localhost:5183
+          MAX_UPLOAD_SIZE_BYTES: "10485760"
+          MAX_AVATAR_SIZE_BYTES: "3145728"
+          CLOUDINARY_NAME: e2e
+          CLOUDINARY_API_KEY: e2e
+          CLOUDINARY_API_SECRET: e2e
+          REDIS_HOST: localhost
+          REDIS_PORT: "6379"
+          MAIL_USERNAME: e2e@example.com
+          MAIL_PASSWORD: e2e
+          MAIL_FROM: e2e@example.com
+          MAIL_PORT: "465"
+          MAIL_SERVER: smtp.example.com
+          MAIL_CONFIRMATION_REQUIRED: "false"
+          E2E_MODE: "true"
+          E2E_MEDIA_DIR: ${{ runner.temp }}/e2e-media
         run: |
           poetry run alembic upgrade head
-          poetry run python main.py &
-          (cd frontend && npx vite preview --port 5173 --strictPort) &
-          npx wait-on http://localhost:8000/health http://localhost:5173
-        env: { DATABASE_URL: "postgresql+psycopg2://postgres:e2e@localhost:5432/photoshare_e2e" }  # + the rest of your env
-      - run: poetry run pytest tests/ui -v --tracing retain-on-failure --screenshot only-on-failure
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with: { name: e2e-traces, path: test-results/ }
+          nohup poetry run uvicorn main:app --host 0.0.0.0 --port 8010 > "$GITHUB_WORKSPACE/backend.log" 2>&1 &
+
+      - name: Start frontend (vite preview)
+        working-directory: frontend
+        run: nohup npx vite preview --host 0.0.0.0 --port 5183 --strictPort > "$GITHUB_WORKSPACE/frontend.log" 2>&1 &
+
+      - name: Wait until the stack answers
+        run: |
+          for url in http://localhost:8010/e2e/info http://localhost:5183; do
+            echo "waiting for $url"
+            curl --fail --silent --show-error --retry 30 --retry-delay 2 --retry-connrefused "$url" > /dev/null
+          done
+          curl --silent http://localhost:8010/e2e/info; echo
+
+      - name: Run UI tests
+        env:
+          WORKERS: ${{ inputs.workers || '2' }}
+          PYTEST_ARGS: ${{ inputs.pytest_args }}
+        run: |
+          poetry run pytest tests/ui -ra -n "$WORKERS" --junitxml=reports/junit.xml $PYTEST_ARGS
+
+      - name: Job summary
+        if: always()
+        run: poetry run python -m tests.ui.support.junit_summary reports/junit.xml >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload traces, screenshots, reports and server logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-results
+          path: |
+            test-results/
+            reports/
+            backend.log
+            frontend.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Open (or update) an issue when the nightly run fails
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "Nightly UI tests are failing";
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = `The scheduled UI test run failed: ${runUrl}\n\nDownload the \`ui-test-results\` artifact for traces, screenshots and server logs.`;
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo, state: "open", per_page: 100,
+            });
+            const existing = open.find((issue) => issue.title === title && !issue.pull_request);
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, body,
+              });
+            } else {
+              await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body });
+            }

@@ -204,57 +204,94 @@ poetry run pytest -v
 3. **Docker security:** The final `Dockerfile` is based on a hardened Alpine image, upgrades system components to address High/Critical vulnerabilities, and uses `.dockerignore` to minimize image size.
 
 
-# UI tests (Playwright + Python) (TODO implementation is under development)
+# UI tests (Playwright + pytest)
 
-UI tests are a separate suite in `tests/ui/` with its own `tests/ui/pytest.ini`. They are
-**not** collected by the normal `poetry run pytest` and never run in the `CI Pipeline` workflow.
+Browser tests for the React frontend, running against a **disposable** stack. They are completely separate from the
+unit tests: own pytest config (`tests/ui/pytest.ini`), never collected by `poetry run pytest`, never part of the
+`CI Pipeline` workflow.
 
-One-time setup:
-
-```bash
-poetry install --with dev,e2e
-poetry run playwright install chromium
-cp tests/ui/.env.e2e.sample tests/ui/.env.e2e      # then edit if your URLs differ
-```
-
-Run (the application must already be running):
+## Quick start
 
 ```bash
-poetry run pytest tests/ui -m framework        # self-checks, no stack needed
-poetry run pytest tests/ui -m smoke            # stack is up and the login page renders
-poetry run pytest tests/ui                     # everything (headless is the default)
-poetry run pytest tests/ui --headed --slowmo 300   # watch the browser
-poetry run playwright codegen http://localhost:5173  # recorder, only to discover locators
+poetry install --with dev,e2e && poetry run playwright install chromium     # once
+docker compose -f docker-compose.e2e.yaml up -d --build                     # stack: :5183 :8010 :5434 :6380
+poetry run pytest tests/ui -n 4                                              # everything, 4 browsers
+docker compose -f docker-compose.e2e.yaml down -v                            # throw it all away
 ```
 
-Failure artifacts (trace, screenshot) are written to `test-results/`; open a trace with
-`poetry run playwright show-trace test-results/<test>/trace.zip`.
+| Goal | Command |
+|---|---|
+| sequential run | `poetry run pytest tests/ui` |
+| a group | `-m "auth or session"` (markers: smoke, auth, feed, photo, profile, admin, moderation, session, rbac) |
+| one test, visible browser | `-k logout --headed --slowmo 300` |
+| slowest tests | `--durations=15` |
+| debug a failure | `poetry run playwright show-trace test-results/<test>/trace.zip` |
+| framework self-checks only (no stack) | `-m framework` |
+| slower machine | `E2E_EXPECT_TIMEOUT=12000 poetry run pytest tests/ui -n 2` |
 
+Rebuild after changing `src/` or `frontend/`: add `--build` to `up`. `-n auto` is capped at 4 workers
+(`--maxprocesses` in `pytest.ini`): more browsers than the single backend can serve only cause timeouts.
 
-## Run the UI tests locally (Update 06.11.2026)
+## How it works
 
-```bash
-# 1. disposable stack: own ports, own database, nothing persisted
-docker compose -f docker-compose.e2e.yaml up -d --build
-#    frontend :5183 | backend :8010 | postgres :5434 | redis :6380
-
-# 2. optional: confirm it is up
-docker compose -f docker-compose.e2e.yaml ps -a     # migrate: Exited (0); db, redis, web, frontend: Up
-curl http://localhost:8010/e2e/info                 # {"e2e":true,"database":"photoshare_e2e"}
-
-# 3. tests (defaults already point at that stack)
-poetry run pytest tests/ui -m "smoke or auth"
-poetry run pytest tests/ui --headed --slowmo 300 -k logout # inbrowser
-
-# to run all tests quietly
-poetry run pytest tests/ui -x -q
-
-# 4. throw everything away
-docker compose -f docker-compose.e2e.yaml down -v
+```
+tests/ui/
+  pytest.ini         own pytest "project": rootdir here, pythonpath ../.., markers, xdist settings
+  conftest.py        fixtures: stack check, db, data factory, open_as(user), image/token helpers
+  config.py          E2E_* settings + the safety guard for the database name
+  flows.py           multi-step navigations shared by tests
+  pages/             Page Objects, one per screen (+ components/: header, upload dialog)
+  support/           db seeding/cleanup, naming, API login helper, image + token generators, stack check
+  test_*.py          the tests, one file per area
 ```
 
-Safety nets, in order: the backend refuses `E2E_MODE=true` unless its database name ends with `_e2e`;
-the test run refuses to start unless the backend reports e2e mode and the same database it seeds;
-each test deletes the data it created; the session sweeps anything left with its name prefix.
+* **Locators** use the existing `id="..."` attributes through `page.get_by_test_id(...)`
+  (`set_test_id_attribute("id")` in `conftest.py`) - no changes to the React code were needed.
+* **Test data** is created directly in the e2e database through the application's own SQLAlchemy models
+  (`data.user("admin")`, `data.photo(...)`, `data.photos(owner, 21, ...)`, `data.comment(...)`, `data.rating(...)`).
+  Seeded users log in via a token placed in `localStorage` (`open_as(user)`), so only the tests of the login screen
+  use the login form.
+* **E2E mode of the backend** (`E2E_MODE=true`): rate limiter off, photos/avatars stored in a local folder instead of
+  Cloudinary, no real e-mail, `/e2e/info` endpoint. The backend refuses to start in this mode unless its database
+  name ends with `_e2e`.
+* **Safety nets**, in order: the backend's `_e2e` check; the test run aborts unless the backend reports e2e mode and the
+  same database the tests seed; every test deletes what it created; each session sweeps leftovers by name prefix;
+  and the stack itself is throwaway (`down -v`).
+
+## Rules for new tests (they also make parallel runs safe)
+
+1. Create data only through the `data` fixture; names only from `namer`; never rely on existing rows.
+2. The feed, user list and moderation list are shared by all workers: always narrow them to your own data
+   (unique `namer.word()` keyword, creator filter, unique username) before asserting. Never assert a total count of an
+   unfiltered list.
+3. Log in with `open_as(user)`; do not share pages or tokens between tests.
+4. `window.confirm` dialogs are dismissed by Playwright unless a handler exists: use `click_and_confirm(...)`.
+5. Wait for results, not time: `expect(...)` auto-waits; never `sleep`.
+6. Known application bugs are documented as `@pytest.mark.xfail(strict=True, raises=AssertionError, ...)`; the
+   marker must be removed when the bug is fixed (the test then fails as "XPASS").
+
+## CI
+
+| Workflow | Runs | Purpose | Blocks merges? |
+|---|---|---|---|
+| `ci.yml` "CI Pipeline" | every push/PR to main | unit tests only | **yes** (the required check) |
+| `e2e.yml` "UI Tests (Playwright)" | nightly 03:00 UTC, PRs touching app/test code, manually | full UI suite, `-n 2`, on a stack built from the commit | no |
+| `live-smoke.yml` "Live Smoke (Render)" | daily 05:30 UTC, manually | optional read-only checks of the deployed site | no |
+
+* Manual run with options: Actions -> "UI Tests (Playwright)" -> Run workflow (workers, extra pytest args like `-m smoke`).
+* Every run uploads `ui-test-results` (traces, screenshots, JUnit, backend/frontend logs; 14 days) and writes a
+  summary on the run page. A failing **nightly** run opens (or comments on) the issue "Nightly UI tests are failing".
+* Scheduled workflows run only from the default branch and GitHub pauses them after 60 days without repository
+  activity.
+
+## Troubleshooting
+
+| Symptom | Cause / fix |
+|---|---|
+| `Stack was not ready ... Connection refused` | stack not running -> `docker compose -f docker-compose.e2e.yaml up -d`; or a stale `tests/ui/.env.e2e` overrides the ports (delete it) |
+| `running WITHOUT E2E_MODE` | you point at the dev stack, or the image is old -> `up -d --build` |
+| passes with `-n 0`, fails with `-n 4` | a test touches shared data (rule 2) |
+| many `ReadTimeout`s | too many workers for the machine -> lower `-n`, raise `E2E_EXPECT_TIMEOUT` |
+| leftover rows | `down -v` (nothing persists); then check `psql ... select count(*) from users` is 0 after a run |
 
 

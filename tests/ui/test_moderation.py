@@ -200,4 +200,4 @@ def test_filters_do_not_leak_to_the_next_user_who_logs_in(open_as, data):
     LoginPage(page).login(second.email, second.password)
     moderation = goto_moderation(page)
 
-    expect(moderation.creator_chip).to_have_count(0)
+    expect(moderation.creator_chip).to_have_count(0, timeout=2000)  # short: this test is expected to fail
