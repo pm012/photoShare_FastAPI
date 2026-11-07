@@ -1,4 +1,4 @@
-name: UI Tests (Playwright)
+name: UI Tests (Playwright) | Nightly & PRs
 
 # Separate from "CI Pipeline" on purpose: a failure here never blocks a merge unless you add
 # "ui-tests" to the required status checks in the branch protection rules (do not, at least at first).

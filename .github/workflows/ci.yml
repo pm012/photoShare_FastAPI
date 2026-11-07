@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI Pipeline (Unit Tests)
 
 # Unit tests only. This is the job to mark as "required" in branch protection.
 # Browser (UI) tests run in a separate workflow (e2e.yml, added in step 5).
