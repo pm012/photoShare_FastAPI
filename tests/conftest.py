@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from main import app
+import cloudinary.uploader
 from src.database.db import get_db, Base
 from src.services.blacklist import blacklist_service
 from src.services.limiter import limiter  # Import the limiter to disable it during tests
@@ -58,6 +59,13 @@ def client(db_session, monkeypatch):
     # Mock black-list Redis
     monkeypatch.setattr(blacklist_service, "is_token_blacklisted", lambda token: False)
     monkeypatch.setattr(blacklist_service, "add_to_blacklist", lambda token, ttl: None)
+    # Prevent talking to the real Cloudinary from unit tests (tests that need specific behaviour patch it themselves)
+    monkeypatch.setattr(
+        cloudinary.uploader, "upload",
+        lambda *args, **kwargs: {"secure_url": "https://res.cloudinary.com/mock/image/upload/test.png",
+                                 "public_id": "mock/test"},
+    )
+    monkeypatch.setattr(cloudinary.uploader, "destroy", lambda *args, **kwargs: {"result": "ok"})
 
     with TestClient(app) as test_client:
         yield test_client
