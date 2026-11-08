@@ -59,7 +59,7 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 # Automatic launch of the coverage for the src folder and generation of HTML-report
 # tests/ui is a separate suite with its own tests/ui/pytest.ini (needs a running stack).
-addopts = "--cov=src --cov-report=term-missing --cov-report=html --ignore=tests/ui"
+addopts = "--cov=src --cov-report=term-missing --cov-report=html --ignore=tests/ui --ignore=tests/live"
 filterwarnings = [
     "ignore:.*Using .httpx. with .starlette.testclient. is deprecated.*",
     "ignore:.*The anyio.abc.BlockingPortal alias is deprecated.*",
