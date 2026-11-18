@@ -81,7 +81,7 @@ def delete_photo(photo_id: int, current_user: User, db: Session) -> Optional[Pho
         return None
         
     # BRD: Delete photo can only owner or Admin
-    if photo.user_id != current_user.id and current_user.role.value != "admin":
+    if photo.user_id != current_user.id and current_user.role.value != "admin" and current_user.role.value != "moderator":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to delete this photo."
