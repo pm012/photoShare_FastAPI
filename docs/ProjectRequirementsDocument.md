@@ -1,4 +1,4 @@
-# PhotoShare Application Requirements (REST API)
+# PhotoShare Application Requirements (REST API/Back-end)
 
 The core REST API functionality is implemented with **FastAPI**.
 
@@ -13,15 +13,15 @@ The core REST API functionality is implemented with **FastAPI**.
 
 ## Photo Management
 1. Users can upload photos with descriptions (`POST`).
-2. Users can delete photos (`DELETE`).
-3. Users can edit photo descriptions (`PUT`).
+2. Users can delete own photos (`DELETE`).
+3. Users can edit own photo descriptions (`PUT`).
 4. Users can retrieve a photo through its unique link (`GET`).
 5. A photo can have **up to 5 tags**. Tags are optional when uploading a photo.
 6. Tags are unique across the application and are submitted by name. If a tag does not exist, it is created; if it does, the existing tag is associated with the photo.
 7. Users can apply basic photo operations supported by [Cloudinary Image Transformations](https://cloudinary.com). The application may choose a limited set of Cloudinary transformations.
 8. Users can create a URL to a transformed image and a QR code for viewing the photo using the [qrcode](https://pypi.org) library. This is a `POST` operation because a separate link to the transformed image is created and stored in the database.
 9. Created links are stored on the server and can be scanned with a mobile phone to view the image.
-10. Administrators can perform all **CRUD operations** on users' photos.
+10. Administrators and Moderators can perform all **CRUD operations** on users' photos.
 
 ---
 
