@@ -441,7 +441,7 @@ function ModerationPanel({ onPhotoSelect }) {
 
                         <div className="modal-actions">
                             <button id="moderation-dialog-close" className="btn btn-secondary" type="button" onClick={() => setSelectedPhoto(null)}>Close</button>
-                            {onPhotoSelect && <button id={`moderation-photo-${selectedPhoto.id}-open-page`} className="btn btn-primary" type="button" onClick={() => onPhotoSelect(selectedPhoto.id)}>Open photo page</button>}
+                            {onPhotoSelect && <button id={`moderation-photo-${selectedPhoto.id}-open-page`} className="btn btn-primary" type="button" onClick={() => onPhotoSelect(selectedPhoto.id)}>Edit/Remove Photo</button>}
                         </div>
                     </section>
                 </div>

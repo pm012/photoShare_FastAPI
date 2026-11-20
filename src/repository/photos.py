@@ -57,8 +57,8 @@ def update_photo_description(photo_id: int, body: PhotoUpdateDescription, curren
     if not photo:
         return None
     
-    # BRD: Update description can only owner or Admin
-    if photo.user_id != current_user.id and current_user.role.value != "admin":
+    # BRD: Update description can only owner or Admin or Moderator
+    if photo.user_id != current_user.id and current_user.role.value != "admin" and current_user.role.value != "moderator":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to edit this photo description."
@@ -81,7 +81,7 @@ def delete_photo(photo_id: int, current_user: User, db: Session) -> Optional[Pho
         return None
         
     # BRD: Delete photo can only owner or Admin
-    if photo.user_id != current_user.id and current_user.role.value != "admin":
+    if photo.user_id != current_user.id and current_user.role.value != "admin" and current_user.role.value != "moderator":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to delete this photo."

@@ -202,10 +202,14 @@ def test_other_users_get_no_management_controls(open_as, data, scene):
     expect(view.delete_button).to_have_count(0)
 
 
-def test_moderators_cannot_edit_photos_but_admins_can(open_as, data, scene):
-    """The photo page offers editing to the owner and to administrators only."""
+# Now 18 2026 added moderators to the list of users who can edit and delete photos (per BRD).
+def test_moderators_can_edit_photos_but_admins_can(open_as, data, scene):
+    """The photo page offers editing to the owner, moderators and to administrators only."""
     _, moderator_view = _open(open_as, data, scene, who=data.user("moderator"))
-    expect(moderator_view.manage_section).to_have_count(0)
+    #expect(moderator_view.manage_section).to_have_count(0)
+    expect(moderator_view.manage_section).to_be_visible()
+    expect(moderator_view.delete_button).to_be_visible()
+           
 
     _, admin_view = _open(open_as, data, scene, who=data.user("admin"))
     expect(admin_view.manage_section).to_be_visible()

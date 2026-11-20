@@ -180,8 +180,9 @@ function PhotoPage({ photoId, onBack, onProfileSelect }) {
     const isStaff = STAFF_ROLES.includes(normalizeRole(currentUser.role));
     const isOwner = currentUser.id === photo.user_id;
     const isAdmin = normalizeRole(currentUser.role) === 'admin';
+    const isModerator = normalizeRole(currentUser.role) === 'moderator';
     // The backend lets only the owner or an administrator edit or delete a photo.
-    const canManagePhoto = isOwner || isAdmin;
+    const canManagePhoto = isOwner || isAdmin || isModerator;
     const parsedTags = parseTags(tagsText);
     const tooManyTags = parsedTags.length > MAX_TAGS;
     const canRate = !isOwner;
